@@ -81,7 +81,7 @@ class BankCog(Cog, name='Banking'):
         except:
             await ctx.message.add_reaction('🤔')
 
-    @command(name='with')
+    @command(aliases=["with"])
     @is_owner()
     async def withdraw(
         self,

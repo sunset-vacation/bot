@@ -1,8 +1,7 @@
 from typing import Dict
 
 from discord import Color, Embed, Guild, Member, Message, Role
-from discord.ext.commands import Bot, Cog, command, is_owner
-from discord.ext.commands.context import Context
+from discord.ext.commands import Bot, Cog, Context, command, is_owner
 from expiringdict import ExpiringDict
 
 from config import CONFIG
