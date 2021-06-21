@@ -1,19 +1,13 @@
 from asyncio import get_event_loop
 from datetime import datetime
 from functools import cache
-from config import CONFIG
-from discord import Guild, Member
-from mongoengine import (
-    DateTimeField,
-    Document,
-    EmbeddedDocument,
-    EmbeddedDocumentField,
-    IntField,
-    StringField,
-    connect,
-)
 
-connect(host=CONFIG.secrets.mongodb_url)
+import mongoengine
+from discord import Guild, Member
+
+from config import CONFIG
+
+mongoengine.connect(host=CONFIG.secrets.mongodb_url)
 
 
 @cache
@@ -21,17 +15,17 @@ def level_to_xp(level: int) -> int:
     return (level ** 3) + (level * 15)
 
 
-class Afk(EmbeddedDocument):
-    reason = StringField()
-    old_nick = StringField()
+class Afk(mongoengine.EmbeddedDocument):
+    reason = mongoengine.StringField()
+    old_nick = mongoengine.StringField()
 
 
-class User(Document):
-    user_id = IntField(primary_key=True)
-    balance = IntField(default=0, min_value=0)
-    donated = IntField(default=0, min_value=0)
-    xp = IntField(default=0, min_value=0)
-    afk = EmbeddedDocumentField(Afk, default=None)
+class User(mongoengine.Document):
+    user_id = mongoengine.IntField(primary_key=True)
+    balance = mongoengine.IntField(default=0, min_value=0)
+    donated = mongoengine.IntField(default=0, min_value=0)
+    xp = mongoengine.IntField(default=0, min_value=0)
+    afk = mongoengine.EmbeddedDocumentField(Afk, default=None)
 
     @property
     def level(self) -> int:
@@ -46,10 +40,10 @@ class User(Document):
         return result
 
 
-class ScammerBan(Document):
-    user_id = IntField(primary_key=True)
-    proof = StringField()
-    when = DateTimeField(default=datetime.now)
+class ScammerBan(mongoengine.Document):
+    user_id = mongoengine.IntField(primary_key=True)
+    proof = mongoengine.StringField()
+    when = mongoengine.DateTimeField(default=datetime.now)
 
 
 def get_user(user_id: int) -> User:

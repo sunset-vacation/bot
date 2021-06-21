@@ -6,24 +6,8 @@ from time import time
 from typing import Optional
 from uuid import uuid4
 
-from discord import (
-    Activity,
-    ActivityType,
-    Color,
-    Embed,
-    Intents,
-    Member,
-    Message,
-)
-from discord.ext.commands import (
-    Bot,
-    BucketType,
-    Context,
-    check,
-    cooldown,
-    has_role,
-    is_owner,
-)
+import discord
+from discord.ext import commands
 from discord.utils import escape_markdown, get
 from requests import get as get_url
 from simpleeval import simple_eval
@@ -31,9 +15,9 @@ from simpleeval import simple_eval
 from config import CONFIG
 from database import add_scammer_ban, get_user, is_user_scammer
 
-intents = Intents.all()
+intents = discord.Intents.all()
 
-bot = Bot(
+bot = commands.Bot(
     command_prefix=CONFIG.bot.prefix, case_insensitive=True, intents=intents
 )
 bot.remove_command('help')
@@ -42,8 +26,8 @@ bot.remove_command('help')
 @bot.event
 async def on_ready() -> None:
     await bot.change_presence(
-        activity=Activity(
-            type=ActivityType.watching, name='!help in Sunset City'
+        activity=discord.Activity(
+            type=discord.ActivityType.watching, name='!help in Sunset City'
         )
     )
     bot.last_welcome = 0
@@ -51,7 +35,7 @@ async def on_ready() -> None:
 
 
 @bot.event
-async def on_member_join(member: Member) -> None:
+async def on_member_join(member: discord.Member) -> None:
     if member.bot:
         return
 
@@ -78,13 +62,13 @@ async def on_member_join(member: Member) -> None:
 
         return
 
-    embed = Embed(
+    embed = discord.Embed(
         title='Welcome to Sunset City!',
         description='We hope you enjoy your time here! Make sure to read '
         'through <#805161020946382871> so you know about our __rules__, '
         '__channels__, and other __important information__.\n\nReact in '
         '<#805309185826881566> for pings and other roles.',
-        color=Color.from_rgb(158, 0, 89),
+        color=discord.Color.from_rgb(158, 0, 89),
     )
     embed.add_field(
         name='Contact staff:',
@@ -109,12 +93,12 @@ async def on_member_join(member: Member) -> None:
 
     await chat.send(welcome_text, embed=embed)
 
-    embed = Embed(
+    embed = discord.Embed(
         title='Sunset City Punishment Appeals',
         description='If you ever need to appeal a strike, mute, ban, or '
         'giveaway blacklist, click the link above. Welcome to the server!',
         url='https://sunsetcity.bsoyka.me/appeals',
-        color=Color.from_rgb(158, 0, 89),
+        color=discord.Color.from_rgb(158, 0, 89),
     )
     embed.set_thumbnail(url=str(bot.guilds[0].icon_url))
 
@@ -133,18 +117,18 @@ async def on_member_join(member: Member) -> None:
 
 
 @bot.command()
-@is_owner()
+@commands.is_owner()
 async def blacklisted(
-    ctx: Context, member: Member, time: str, *, reason: str
+    ctx: commands.Context, member: discord.Member, time: str, *, reason: str
 ) -> None:
     """Notifies a user that they've been blacklisted from giveaways"""
 
-    embed = Embed(
+    embed = discord.Embed(
         title="You've been blacklisted from giveaways, lotteries, and events.",
         description='You can appeal '
         '[here](https://sunsetcity.bsoyka.me/appeals) or undo this early by '
         'purchasing `Escape Jail` from the UnbelievaBoat store.',
-        color=Color.red(),
+        color=discord.Color.red(),
     )
     embed.add_field(name='Time', value=time, inline=True)
     embed.add_field(name='Reason', value=reason, inline=True)
@@ -161,19 +145,19 @@ async def blacklisted(
 
 
 @bot.command(name='gawreqs')
-@is_owner()
-async def did_not_meet_reqs(ctx: Context, member: Member) -> None:
+@commands.is_owner()
+async def did_not_meet_reqs(ctx: commands.Context, member: discord.Member) -> None:
     """Notifies a user that their giveaway reaction has been removed"""
 
-    giveaway: Message = ctx.message.reference.resolved
+    giveaway: discord.Message = ctx.message.reference.resolved
     jump = giveaway.jump_url
 
     await giveaway.remove_reaction('🎉', member)
 
-    embed = Embed(
+    embed = discord.Embed(
         title='Your giveaway entry has been removed.',
         description=f'You did not meet/complete the requirements for [this giveaway]({jump}).',
-        color=Color.red(),
+        color=discord.Color.red(),
     )
 
     await member.send(embed=embed)
@@ -182,7 +166,7 @@ async def did_not_meet_reqs(ctx: Context, member: Member) -> None:
 
 
 @bot.event
-async def on_member_remove(member: Member) -> None:
+async def on_member_remove(member: discord.Member) -> None:
     if member.bot:
         return
 
@@ -192,8 +176,8 @@ async def on_member_remove(member: Member) -> None:
 
 
 @bot.command()
-@has_role(CONFIG.guild.roles.moderator)
-async def modnick(ctx: Context, member: Member) -> None:
+@commands.has_role(CONFIG.guild.roles.moderator)
+async def modnick(ctx: commands.Context, member: discord.Member) -> None:
     """Moderates the nickname of a member"""
 
     await member.edit(
@@ -203,21 +187,21 @@ async def modnick(ctx: Context, member: Member) -> None:
     await ctx.message.add_reaction('✅')
 
 
-def chat_only(ctx: Context) -> bool:
+def chat_only(ctx: commands.Context) -> bool:
     return ctx.channel.id == CONFIG.guild.channels.chat
 
 
 @bot.command()
-@has_role(CONFIG.guild.roles.helper)
-@cooldown(1, 3600, BucketType.guild)
-@check(chat_only)
-async def revive(ctx: Context, *, topic: Optional[str] = None) -> None:
+@commands.has_role(CONFIG.guild.roles.helper)
+@commands.cooldown(1, 3600, commands.BucketType.guild)
+@commands.check(chat_only)
+async def revive(ctx: commands.Context, *, topic: Optional[str] = None) -> None:
     """Pings the chat revival role
 
     Can only be used in <#805289244049932319>.
     """
 
-    embed = Embed(title="Let's revive the chat!")
+    embed = discord.Embed(title="Let's revive the chat!")
     embed.set_author(name=ctx.author, icon_url=ctx.author.avatar_url)
 
     if topic:
@@ -307,9 +291,9 @@ async def guides(ctx, guide: str = None):
     """Shows a guide (or the list of guides if not specified)"""
 
     if guide == None:
-        embed = Embed(
+        embed = discord.Embed(
             title='List of guide tags',
-            color=Color.blurple(),
+            color=discord.Color.blurple(),
         )
 
         for tag, guide in sorted(guides_dict.items()):
@@ -323,21 +307,21 @@ async def guides(ctx, guide: str = None):
     if guide not in guides_dict:
         await ctx.reply(
             '',
-            embed=Embed(
+            embed=discord.Embed(
                 title='Guide not found',
                 description='Run the command again without any arguments to '
                 'view the list of guide tags.',
-                color=Color.red(),
+                color=discord.Color.red(),
             ),
         )
         return
 
     requested = guides_dict[guide]
 
-    embed = Embed(
+    embed = discord.Embed(
         title=requested.title,
         description=requested.content,
-        color=Color.blurple(),
+        color=discord.Color.blurple(),
     )
 
     if requested.image:
@@ -350,7 +334,7 @@ async def guides(ctx, guide: str = None):
 async def ping(ctx):
     """Shows the bot's latency"""
 
-    embed = Embed(title='Pong!', color=Color.blurple())
+    embed = discord.Embed(title='Pong!', color=discord.Color.blurple())
     embed.add_field(
         name='Bot Latency', value=f'{round(bot.latency * 1000, 4)} ms'
     )
@@ -359,8 +343,8 @@ async def ping(ctx):
 
 
 @bot.command()
-@is_owner()
-async def sudo(ctx, user: Member, *, command: str) -> None:
+@commands.is_owner()
+async def sudo(ctx, user: discord.Member, *, command: str) -> None:
     """Processes a command as if it was sent by another user"""
     fake_message = copy(ctx.message)
 
@@ -372,7 +356,7 @@ async def sudo(ctx, user: Member, *, command: str) -> None:
 
 
 @bot.command(aliases=['me'])
-async def user(ctx, user: Member = None):
+async def user(ctx, user: discord.Member = None):
     """Shows basic details about a user
 
     This command will only display the current user's information unless the current user is a Helper+.
@@ -388,15 +372,15 @@ async def user(ctx, user: Member = None):
 
     if user.bot:
         await ctx.reply(
-            embed=Embed(
-                title='This command cannot be used on bots.', color=Color.red()
+            embed=discord.Embed(
+                title='This command cannot be used on bots.', color=discord.Color.red()
             )
         )
 
     async with ctx.typing():
         account = get_user(user.id)
 
-        embed = Embed(
+        embed = discord.Embed(
             title=user.display_name,
             description=f'{user.mention} - `{escape_markdown(str(user))}`',
             color=user.color,
@@ -506,20 +490,20 @@ async def math(ctx, *, expression: str):
     result = simple_eval(expression)
 
     await ctx.reply(
-        embed=Embed(
+        embed=discord.Embed(
             title='Calculation Result',
             description=escape_markdown(str(result)),
-            color=Color.blurple(),
+            color=discord.Color.blurple(),
         )
     )
 
 
-def giveaways_only(ctx: Context) -> bool:
+def giveaways_only(ctx: commands.Context) -> bool:
     return ctx.channel.id == CONFIG.guild.channels.giveaways
 
 
 @bot.command()
-@check(giveaways_only)
+@commands.check(giveaways_only)
 async def claim(ctx, minutes: int):
     """Shows a claim time limit for a giveaway
 
@@ -529,7 +513,7 @@ async def claim(ctx, minutes: int):
     winner_msg = ctx.message.reference.resolved
     end_time = winner_msg.created_at + timedelta(minutes=minutes)
 
-    embed = Embed(timestamp=end_time, color=Color.blurple())
+    embed = discord.Embed(timestamp=end_time, color=discord.Color.blurple())
     embed.set_footer(text='Must DM host (not sponsor) to claim by')
 
     await winner_msg.reply('', embed=embed)
@@ -537,20 +521,20 @@ async def claim(ctx, minutes: int):
 
 
 @bot.command()
-@is_owner()
+@commands.is_owner()
 async def dankdown(ctx):
     """Locks down Dank Memer channels"""
 
     channels = CONFIG.guild.dank_channels
 
-    embed = Embed(
+    embed = discord.Embed(
         title='Dank Memer is down!',
         description='''
 **You are not muted.** __All Dank Memer channels are locked until the bot comes back online.__
 
 *(Note that just because the bot is online in another server doesn't mean it's online here.)*
 ''',
-        color=Color.red(),
+        color=discord.Color.red(),
     )
     embed.set_thumbnail(
         url='https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/240/'
@@ -572,18 +556,18 @@ async def dankdown(ctx):
 
 
 @bot.command()
-@is_owner()
+@commands.is_owner()
 async def dankup(ctx):
     """Unlocks Dank Memer channels"""
 
     channels = CONFIG.guild.dank_channels
 
-    embed = Embed(
+    embed = discord.Embed(
         title='Dank Memer is back!',
         description='''
 Thank you for your patience.
 ''',
-        color=Color.red(),
+        color=discord.Color.red(),
     )
     embed.set_thumbnail(
         url='https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/'
@@ -624,10 +608,10 @@ async def on_message(message):
 
     if message.channel.id == CONFIG.guild.channels.outside_heists:
         await message.channel.send(
-            embed=Embed(
+            embed=discord.Embed(
                 title='Opt out',
                 description='You can hide this channel by reacting to **[this message](https://discord.com/channels/805161020946382868/805309185826881566/824828154127712256)** with the :moneybag: emoji.',
-                color=Color.blurple(),
+                color=discord.Color.blurple(),
             )
         )
         return

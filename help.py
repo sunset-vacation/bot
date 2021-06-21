@@ -4,16 +4,7 @@ from contextlib import suppress
 from typing import List, Union
 
 from discord import Color, Embed
-from discord.ext.commands import (
-    Bot,
-    Cog,
-    Command,
-    CommandError,
-    Context,
-    DisabledCommand,
-    Group,
-    HelpCommand,
-)
+from discord.ext import commands
 from fuzzywuzzy import fuzz, process
 from fuzzywuzzy.utils import full_process
 
@@ -43,7 +34,7 @@ class HelpQueryNotFound(ValueError):
         self.possible_matches = possible_matches
 
 
-class CustomHelpCommand(HelpCommand):
+class CustomHelpCommand(commands.HelpCommand):
     """
     An interactive instance for the bot help command.
 
@@ -58,7 +49,7 @@ class CustomHelpCommand(HelpCommand):
         super().__init__(command_attrs={'help': 'Shows help for bot commands'})
 
     async def command_callback(
-        self, ctx: Context, *, command: str = None
+        self, ctx: commands.Context, *, command: str = None
     ) -> None:
         """Attempts to match the provided query with a valid command or cog."""
         # the only reason we need to tamper with this is because d.py does not support "categories",
@@ -113,7 +104,7 @@ class CustomHelpCommand(HelpCommand):
             # the the command or group name
             choices.add(str(command))
 
-            if isinstance(command, Command):
+            if isinstance(command, commands.Command):
                 # all aliases if it's just a command
                 choices.update(command.aliases)
             else:
@@ -159,7 +150,7 @@ class CustomHelpCommand(HelpCommand):
         return HelpQueryNotFound(f'Query "{string}" not found.', dict(result))
 
     async def subcommand_not_found(
-        self, command: Command, string: str
+        self, command: commands.Command, string: str
     ) -> 'HelpQueryNotFound':
         """
         Redirects the error to `command_not_found`.
@@ -182,7 +173,7 @@ class CustomHelpCommand(HelpCommand):
 
         await self.context.send(embed=embed)
 
-    async def command_formatting(self, command: Command) -> Embed:
+    async def command_formatting(self, command: commands.Command) -> Embed:
         """
         Takes a command and turns it into an embed.
 
@@ -214,9 +205,9 @@ class CustomHelpCommand(HelpCommand):
         try:
             if not await command.can_run(self.context):
                 command_details += NOT_ALLOWED_TO_RUN_MESSAGE
-        except DisabledCommand:
+        except commands.DisabledCommand:
             command_details += '***This command is disabled.***\n\n'
-        except CommandError:
+        except commands.CommandError:
             command_details += NOT_ALLOWED_TO_RUN_MESSAGE
 
         command_details += f"*{command.help or 'No details provided.'}*\n"
@@ -224,14 +215,14 @@ class CustomHelpCommand(HelpCommand):
 
         return embed
 
-    async def send_command_help(self, command: Command) -> None:
+    async def send_command_help(self, command: commands.Command) -> None:
         """Send help for a single command."""
         embed = await self.command_formatting(command)
         await self.context.send(embed=embed)
 
     @staticmethod
     def get_commands_brief_details(
-        commands_: List[Command], return_as_list: bool = False
+        commands_: List[commands.Command], return_as_list: bool = False
     ) -> Union[List[str], str]:
         """
         Formats the prefix, command name and signature, and short doc for an iterable of commands.
@@ -249,7 +240,7 @@ class CustomHelpCommand(HelpCommand):
         else:
             return ''.join(details)
 
-    async def send_group_help(self, group: Group) -> None:
+    async def send_group_help(self, group: commands.Group) -> None:
         """Sends help for a group command."""
         subcommands = group.commands
 
@@ -269,7 +260,7 @@ class CustomHelpCommand(HelpCommand):
 
         await self.context.send(embed=embed)
 
-    async def send_cog_help(self, cog: Cog) -> None:
+    async def send_cog_help(self, cog: commands.Cog) -> None:
         """Send help for a cog."""
         # sort commands by name, and remove any the user can't run or are hidden.
         commands_ = await self.filter_commands(cog.get_commands(), sort=True)
@@ -285,7 +276,7 @@ class CustomHelpCommand(HelpCommand):
         await self.context.send(embed=embed)
 
     @staticmethod
-    def _category_key(command: Command) -> str:
+    def _category_key(command: commands.Command) -> str:
         """
         Returns a cog name of a given command for use as a key for `sorted` and `groupby`.
 
@@ -393,10 +384,10 @@ class CustomHelpCommand(HelpCommand):
         )
 
 
-class HelpCog(Cog, name='Help'):
+class HelpCog(commands.Cog, name='Help'):
     """Custom Embed Pagination Help feature."""
 
-    def __init__(self, bot: Bot) -> None:
+    def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
         self.old_help_command = bot.help_command
         bot.help_command = CustomHelpCommand()

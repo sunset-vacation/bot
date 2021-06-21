@@ -2,16 +2,7 @@ from datetime import datetime
 from textwrap import shorten
 from typing import Optional, Union
 
-from discord import (
-    Color,
-    Embed,
-    Invite,
-    Member,
-    Message,
-    RawReactionActionEvent,
-    TextChannel,
-    User,
-)
+import discord
 from discord.abc import Messageable
 from discord.errors import Forbidden
 from discord.ext.commands import Bot, Cog, Context, check, command, is_owner
@@ -56,7 +47,7 @@ class AfkCog(Cog, name='AFK'):
         account.afk = afk
         account.save()
 
-        embed = Embed(title='You have been marked AFK', color=Color.blurple())
+        embed = discord.Embed(title='You have been marked AFK', color=discord.Color.blurple())
         embed.add_field(name='Reason', value=reason)
         embed.set_footer(
             text='This will be cleared automatically when you start typing in '
@@ -68,15 +59,15 @@ class AfkCog(Cog, name='AFK'):
 
     @command(name='removeafk')
     @is_owner()
-    async def remove_afk(self, ctx: Context, user: Member) -> None:
+    async def remove_afk(self, ctx: Context, user: discord.Member) -> None:
         await self.remove_afk_if_needed(get_user(user.id), user, ctx.channel)
         await ctx.message.add_reaction('✅')
 
     async def remove_afk_if_needed(
         self,
         account: DbUser,
-        user: Member,
-        channel: Optional[TextChannel] = None,
+        user: discord.Member,
+        channel: Optional[discord.TextChannel] = None,
     ) -> None:
         if account.afk is None:
             return
@@ -91,8 +82,8 @@ class AfkCog(Cog, name='AFK'):
 
         await channel.send(
             user.mention,
-            embed=Embed(
-                title='Your AFK status has been removed', color=Color.blurple()
+            embed=discord.Embed(
+                title='Your AFK status has been removed', color=discord.Color.blurple()
             ),
             delete_after=4,
         )
@@ -101,7 +92,7 @@ class AfkCog(Cog, name='AFK'):
         account.save()
 
     @Cog.listener()
-    async def on_message(self, message: Message) -> None:
+    async def on_message(self, message: discord.Message) -> None:
         if message.author.bot:
             return
 
@@ -129,9 +120,9 @@ class AfkCog(Cog, name='AFK'):
                         else mentioned_user.name
                     )
 
-                    embed = Embed(
+                    embed = discord.Embed(
                         title=f'{old_name} is currently AFK',
-                        color=Color.gold(),
+                        color=discord.Color.gold(),
                     )
                     embed.add_field(
                         name='Reason', value=mentioned_account.afk.reason
@@ -140,9 +131,9 @@ class AfkCog(Cog, name='AFK'):
 
     @Cog.listener()
     async def on_typing(
-        self, channel: Messageable, user: Union[User, Member], when: datetime
+        self, channel: Messageable, user: Union[discord.User, discord.Member], when: datetime
     ) -> None:
-        if user.bot or type(user) != Member:
+        if user.bot or type(user) != discord.Member:
             return
 
         from_account = get_user(user.id)
@@ -151,7 +142,7 @@ class AfkCog(Cog, name='AFK'):
             await self.remove_afk_if_needed(from_account, user, channel)
 
     @Cog.listener()
-    async def on_raw_reaction_add(self, payload: RawReactionActionEvent):
+    async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
         user = self.bot.get_user(payload.user_id)
 
         if user.bot or payload.member is None:
@@ -163,7 +154,7 @@ class AfkCog(Cog, name='AFK'):
             await self.remove_afk_if_needed(from_account, payload.member)
 
     @Cog.listener()
-    async def on_user_update(self, before: User, after: User):
+    async def on_user_update(self, before: discord.User, after: discord.User):
         member = get(self.bot.guilds, id=CONFIG.guild.id).get_member(after.id)
 
         if member is None:
@@ -178,7 +169,7 @@ class AfkCog(Cog, name='AFK'):
             await self.remove_afk_if_needed(from_account, member)
 
     @Cog.listener()
-    async def on_invite_create(self, invite: Invite):
+    async def on_invite_create(self, invite: discord.Invite):
         user = self.bot.guilds[0].get_member(invite.inviter.id)
 
         if user is None:

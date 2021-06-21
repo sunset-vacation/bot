@@ -3,26 +3,15 @@ from sys import stderr
 from traceback import print_exception
 
 from discord import Color, Embed
-from discord.ext.commands import (
-    BadArgument,
-    Bot,
-    CheckFailure,
-    Cog,
-    CommandInvokeError,
-    CommandNotFound,
-    CommandOnCooldown,
-    Context,
-    DisabledCommand,
-    MissingRequiredArgument,
-)
+from discord.ext import commands
 
 
-class ErrorHandlingCog(Cog):
-    def __init__(self, bot: Bot):
+class ErrorHandlingCog(commands.Cog):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @Cog.listener()
-    async def on_command_error(self, ctx: Context, error: Exception):
+    @commands.Cog.listener()
+    async def on_command_error(self, ctx: commands.Context, error: Exception):
         if hasattr(ctx.command, 'on_error'):
             return
 
@@ -31,18 +20,18 @@ class ErrorHandlingCog(Cog):
             if cog._get_overridden_method(cog.cog_command_error) is not None:
                 return
 
-        if isinstance(error, CommandInvokeError):
+        if isinstance(error, commands.CommandInvokeError):
             error = error.original
 
-        if isinstance(error, CommandNotFound):
+        if isinstance(error, commands.CommandNotFound):
             pass
-        elif isinstance(error, DisabledCommand):
+        elif isinstance(error, commands.DisabledCommand):
             await ctx.reply(
                 embed=Embed(
                     title='That command has been disabled.', color=Color.red()
                 )
             )
-        elif isinstance(error, CommandOnCooldown):
+        elif isinstance(error, commands.CommandOnCooldown):
             await ctx.reply(
                 embed=Embed(
                     title='That command is on cooldown.',
@@ -51,13 +40,13 @@ class ErrorHandlingCog(Cog):
                     color=Color.red(),
                 )
             )
-        elif isinstance(error, CheckFailure):
+        elif isinstance(error, commands.CheckFailure):
             await ctx.reply(
                 embed=Embed(
                     title="You can't use that command here.", color=Color.red()
                 )
             )
-        elif isinstance(error, BadArgument):
+        elif isinstance(error, commands.BadArgument):
             await ctx.reply(
                 embed=Embed(
                     title='One or more of the arguments provided is invalid.',
@@ -67,7 +56,7 @@ class ErrorHandlingCog(Cog):
             print_exception(
                 type(error), error, error.__traceback__, file=stderr
             )
-        elif isinstance(error, MissingRequiredArgument):
+        elif isinstance(error, commands.MissingRequiredArgument):
             await ctx.reply(
                 embed=Embed(
                     title='One or more required arguments is missing.',
@@ -89,5 +78,5 @@ class ErrorHandlingCog(Cog):
             )
 
 
-def setup(bot: Bot):
+def setup(bot: commands.Bot):
     bot.add_cog(ErrorHandlingCog(bot))
