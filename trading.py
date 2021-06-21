@@ -1,20 +1,22 @@
 from discord import Color, Embed, Member, User
-from discord.ext.commands import BucketType, Cog, command, cooldown, has_role
+from discord.ext import commands
 from discord.utils import get
 
 from config import CONFIG
 
 
-class TradingCog(Cog, name='Trading'):
-    def __init__(self, bot):
+class TradingCog(commands.Cog, name='Trading'):
+    def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
 
-    @command(aliases=['mm'])
-    @cooldown(1, 60, BucketType.user)
-    async def middleman(self, ctx, user: Member):
+    @commands.command(aliases=['mm'])
+    @commands.cooldown(1, 60, commands.BucketType.user)
+    async def middleman(self, ctx: commands.Context, user: Member) -> None:
         """Requests a middleman for a trade with a user"""
 
-        if CONFIG.guild.roles.blacklisted in [role.id for role in ctx.author.roles]:
+        if CONFIG.guild.roles.blacklisted in [
+            role.id for role in ctx.author.roles
+        ]:
             await ctx.reply(
                 embed=Embed(
                     title="You're blacklisted from trading!",
@@ -33,7 +35,9 @@ class TradingCog(Cog, name='Trading'):
             )
             return
 
-        if CONFIG.guild.roles.trading not in [role.id for role in ctx.author.roles]:
+        if CONFIG.guild.roles.trading not in [
+            role.id for role in ctx.author.roles
+        ]:
             await ctx.reply(
                 embed=Embed(
                     title="You haven't agreed to our trading rules yet!",
@@ -94,9 +98,9 @@ class TradingCog(Cog, name='Trading'):
             )
         )
 
-    @command()
-    @has_role(CONFIG.guild.roles.middleman)
-    async def ta(self, ctx, *users: User):
+    @commands.command()
+    @commands.has_role(CONFIG.guild.roles.middleman)
+    async def ta(self, ctx: commands.Context, *users: User) -> None:
         """Adds the specified users to the trading channel"""
 
         guild = self.bot.guilds[0]
@@ -124,9 +128,9 @@ class TradingCog(Cog, name='Trading'):
             ' '.join(user.mention for user in users), embed=embed
         )
 
-    @command()
-    @has_role(CONFIG.guild.roles.middleman)
-    async def tr(self, ctx, *users: User):
+    @commands.command()
+    @commands.has_role(CONFIG.guild.roles.middleman)
+    async def tr(self, ctx: commands.Context, *users: User) -> None:
         """Removes the specified users from the trading channel"""
 
         guild = self.bot.guilds[0]
@@ -150,5 +154,5 @@ class TradingCog(Cog, name='Trading'):
         await ctx.reply(embed=Embed(title='Success!', color=Color.blurple()))
 
 
-def setup(bot):
+def setup(bot: commands.Bot) -> None:
     bot.add_cog(TradingCog(bot))

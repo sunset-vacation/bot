@@ -1,17 +1,17 @@
 from discord import Color, Embed
-from discord.ext.commands import Cog, command, has_role
+from discord.ext.commands import Bot, Cog, Context, command, has_role
 from discord.utils import get
 
 from config import CONFIG
 
 
 class StaffCog(Cog, name='Staff Tools'):
-    def __init__(self, bot):
+    def __init__(self, bot: Bot):
         self.bot = bot
 
     @command()
     @has_role(CONFIG.guild.roles.staff)
-    async def leave(self, ctx):
+    async def leave(self, ctx: Context) -> None:
         """Toggles your leave status"""
 
         leave_role = get(ctx.guild.roles, id=CONFIG.guild.roles.staff_leave)
@@ -40,5 +40,5 @@ class StaffCog(Cog, name='Staff Tools'):
             )
 
 
-def setup(bot):
+def setup(bot: Bot) -> None:
     bot.add_cog(StaffCog(bot))

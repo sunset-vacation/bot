@@ -49,11 +49,12 @@ class LinePaginator(Paginator):
         max_size: int = 2000,
         scale_to_size: int = 2000,
         max_lines: t.Optional[int] = None,
-    ) -> None:
+    ):
         """
         This function overrides the Paginator.__init__ from inside discord.ext.commands.
         It overrides in order to allow us to configure the maximum number of lines per page.
         """
+
         self.prefix = prefix
         self.suffix = suffix
 
@@ -98,6 +99,7 @@ class LinePaginator(Paginator):
         This function overrides the `Paginator.add_line` from inside `discord.ext.commands`.
         It overrides in order to allow us to configure the maximum number of lines per page.
         """
+
         remaining_words = None
         max_chars = self.max_size - len(self.prefix) - 2
         if len(line) > max_chars:
@@ -136,6 +138,7 @@ class LinePaginator(Paginator):
         This closes the current page and resets the counters for the new page's line count and
         character count.
         """
+
         self._linecount = 0
         self._count = len(self.prefix) + 1
         self.close_page()
@@ -154,6 +157,7 @@ class LinePaginator(Paginator):
         continuation.
         Return a tuple in the format (reduced_words, remaining_words).
         """
+
         reduced_words = []
         remaining_words = []
 

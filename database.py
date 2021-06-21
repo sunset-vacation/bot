@@ -55,11 +55,11 @@ def get_user(user_id: int) -> User:
     return User(user_id=user_id).save()
 
 
-async def ban_scammer(guild: Guild, member: Member):
+async def ban_scammer(guild: Guild, member: Member) -> None:
     await guild.ban(member, reason='Known scammer', delete_message_days=2)
 
 
-def add_scammer_ban(user_id: int, guild: Guild, proof: str):
+def add_scammer_ban(user_id: int, guild: Guild, proof: str) -> None:
     ban = ScammerBan.objects.with_id(user_id)  # pylint: disable=no-member
     member = guild.get_member(user_id)
 

@@ -11,7 +11,9 @@ class ErrorHandlingCog(commands.Cog):
         self.bot = bot
 
     @commands.Cog.listener()
-    async def on_command_error(self, ctx: commands.Context, error: Exception):
+    async def on_command_error(
+        self, ctx: commands.Context, error: Exception
+    ) -> None:
         if hasattr(ctx.command, 'on_error'):
             return
 
@@ -78,5 +80,5 @@ class ErrorHandlingCog(commands.Cog):
             )
 
 
-def setup(bot: commands.Bot):
+def setup(bot: commands.Bot) -> None:
     bot.add_cog(ErrorHandlingCog(bot))

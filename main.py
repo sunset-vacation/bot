@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from datetime import timedelta
 from re import findall
 from time import time
-from typing import Optional
+from typing import Dict, Optional
 from uuid import uuid4
 
 import discord
@@ -146,7 +146,9 @@ async def blacklisted(
 
 @bot.command(name='gawreqs')
 @commands.is_owner()
-async def did_not_meet_reqs(ctx: commands.Context, member: discord.Member) -> None:
+async def did_not_meet_reqs(
+    ctx: commands.Context, member: discord.Member
+) -> None:
     """Notifies a user that their giveaway reaction has been removed"""
 
     giveaway: discord.Message = ctx.message.reference.resolved
@@ -195,7 +197,9 @@ def chat_only(ctx: commands.Context) -> bool:
 @commands.has_role(CONFIG.guild.roles.helper)
 @commands.cooldown(1, 3600, commands.BucketType.guild)
 @commands.check(chat_only)
-async def revive(ctx: commands.Context, *, topic: Optional[str] = None) -> None:
+async def revive(
+    ctx: commands.Context, *, topic: Optional[str] = None
+) -> None:
     """Pings the chat revival role
 
     Can only be used in <#805289244049932319>.
@@ -219,7 +223,7 @@ class Guide:
     image: Optional[str] = None
 
 
-guides_dict = {
+guides_dict: Dict[str, Guide] = {
     'impersonation': Guide(
         title='How to tell if a user is the real Dank Memer',
         content='''
@@ -287,7 +291,7 @@ The total amount of XP points you'll need to reach a specific level is determine
 
 
 @bot.command(aliases=['g', 'guide'])
-async def guides(ctx, guide: str = None):
+async def guides(ctx: commands.Context, guide: Optional[str] = None) -> None:
     """Shows a guide (or the list of guides if not specified)"""
 
     if guide == None:
@@ -331,7 +335,7 @@ async def guides(ctx, guide: str = None):
 
 
 @bot.command()
-async def ping(ctx):
+async def ping(ctx: commands.Context) -> None:
     """Shows the bot's latency"""
 
     embed = discord.Embed(title='Pong!', color=discord.Color.blurple())
@@ -344,7 +348,9 @@ async def ping(ctx):
 
 @bot.command()
 @commands.is_owner()
-async def sudo(ctx, user: discord.Member, *, command: str) -> None:
+async def sudo(
+    ctx: commands.Context, user: discord.Member, *, command: str
+) -> None:
     """Processes a command as if it was sent by another user"""
     fake_message = copy(ctx.message)
 
@@ -356,10 +362,13 @@ async def sudo(ctx, user: discord.Member, *, command: str) -> None:
 
 
 @bot.command(aliases=['me'])
-async def user(ctx, user: discord.Member = None):
+async def user(
+    ctx: commands.Context, user: Optional[discord.Member] = None
+) -> None:
     """Shows basic details about a user
 
-    This command will only display the current user's information unless the current user is a Helper+.
+    This command will only display the current user's information unless
+    the current user is a Helper+.
     """
 
     if (
@@ -373,7 +382,8 @@ async def user(ctx, user: discord.Member = None):
     if user.bot:
         await ctx.reply(
             embed=discord.Embed(
-                title='This command cannot be used on bots.', color=discord.Color.red()
+                title='This command cannot be used on bots.',
+                color=discord.Color.red(),
             )
         )
 
@@ -400,9 +410,7 @@ async def user(ctx, user: discord.Member = None):
         ]
 
         if pronoun_roles:
-            embed.add_field(
-                name='Pronouns', value=', '.join(pronoun_roles)
-            )
+            embed.add_field(name='Pronouns', value=', '.join(pronoun_roles))
 
         age_roles = [
             role.mention
@@ -484,7 +492,7 @@ async def user(ctx, user: discord.Member = None):
 
 
 @bot.command()
-async def math(ctx, *, expression: str):
+async def math(ctx: commands.Context, *, expression: str) -> None:
     """Evaluates a mathematical expression"""
 
     result = simple_eval(expression)
@@ -504,7 +512,7 @@ def giveaways_only(ctx: commands.Context) -> bool:
 
 @bot.command()
 @commands.check(giveaways_only)
-async def claim(ctx, minutes: int):
+async def claim(ctx: commands.Context, minutes: int) -> None:
     """Shows a claim time limit for a giveaway
 
     Must be used by replying to the giveaway winner message
@@ -522,7 +530,7 @@ async def claim(ctx, minutes: int):
 
 @bot.command()
 @commands.is_owner()
-async def dankdown(ctx):
+async def dankdown(ctx: commands.Context) -> None:
     """Locks down Dank Memer channels"""
 
     channels = CONFIG.guild.dank_channels
@@ -557,7 +565,7 @@ async def dankdown(ctx):
 
 @bot.command()
 @commands.is_owner()
-async def dankup(ctx):
+async def dankup(ctx: commands.Context) -> None:
     """Unlocks Dank Memer channels"""
 
     channels = CONFIG.guild.dank_channels
@@ -589,7 +597,7 @@ Thank you for your patience.
 
 
 @bot.event
-async def on_message(message):
+async def on_message(message: discord.Message) -> None:
     if message.author == bot.user:
         return
 

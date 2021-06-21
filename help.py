@@ -25,8 +25,9 @@ class HelpQueryNotFound(ValueError):
 
     Contains the custom attribute of ``possible_matches``.
 
-    Instances of this object contain a dictionary of any command(s) that were close to matching the
-    query, where keys are the possible matched command names and values are the likeness match scores.
+    Instances of this object contain a dictionary of any command(s) that
+    were close to matching the query, where keys are the possible
+    matched command names and values are the likeness match scores.
     """
 
     def __init__(self, arg: str, possible_matches: dict = None):
@@ -38,11 +39,13 @@ class CustomHelpCommand(commands.HelpCommand):
     """
     An interactive instance for the bot help command.
 
-    Cogs can be grouped into custom categories. All cogs with the same category will be displayed
-    under a single category name in the help output. Custom categories are defined inside the cogs
-    as a class attribute named `category`. A description can also be specified with the attribute
-    `category_description`. If a description is not found in at least one cog, the default will be
-    the regular description (class docstring) of the first cog found in the category.
+    Cogs can be grouped into custom categories. All cogs with the same
+    category will be displayed under a single category name in the help
+    output. Custom categories are defined inside the cogs as a class
+    attribute named `category`. A description can also be specified with
+    the attribute `category_description`. If a description is not found
+    in at least one cog, the default will be the regular description
+    (class docstring) of the first cog found in the category.
     """
 
     def __init__(self):
@@ -52,6 +55,7 @@ class CustomHelpCommand(commands.HelpCommand):
         self, ctx: commands.Context, *, command: str = None
     ) -> None:
         """Attempts to match the provided query with a valid command or cog."""
+
         # the only reason we need to tamper with this is because d.py does not support "categories",
         # so we need to deal with them ourselves.
 
@@ -92,10 +96,12 @@ class CustomHelpCommand(commands.HelpCommand):
         - Cog names
         - Group command names (and aliases)
         - Command names (and aliases)
-        - Subcommand names (with parent group and aliases for subcommand, but not including aliases for group)
+        - Subcommand names (with parent group and aliases for
+          subcommand, but not including aliases for group)
 
         Options and choices are case sensitive.
         """
+
         # first get all commands including subcommands and full command name aliases
         choices = set()
         for command in await self.filter_commands(
@@ -127,10 +133,13 @@ class CustomHelpCommand(commands.HelpCommand):
 
     async def command_not_found(self, string: str) -> 'HelpQueryNotFound':
         """
-        Handles when a query does not match a valid command, group, cog or category.
+        Handles when a query does not match a valid command, group, cog
+        or category.
 
-        Will return an instance of the `HelpQueryNotFound` exception with the error message and possible matches.
+        Will return an instance of the `HelpQueryNotFound` exception
+        with the error message and possible matches.
         """
+
         choices = await self.get_all_help_choices()
 
         # Run fuzzywuzzy's processor beforehand, and avoid matching if processed string is empty
@@ -155,14 +164,17 @@ class CustomHelpCommand(commands.HelpCommand):
         """
         Redirects the error to `command_not_found`.
 
-        `command_not_found` deals with searching and getting best choices for both commands and subcommands.
+        `command_not_found` deals with searching and getting best
+        choices for both commands and subcommands.
         """
+
         return await self.command_not_found(
             f'{command.qualified_name} {string}'
         )
 
     async def send_error_message(self, error: HelpQueryNotFound) -> None:
         """Send the error message to the channel."""
+
         embed = Embed(colour=Color.red(), title=str(error))
 
         if getattr(error, 'possible_matches', None):
@@ -177,8 +189,10 @@ class CustomHelpCommand(commands.HelpCommand):
         """
         Takes a command and turns it into an embed.
 
-        It will add an author, command signature + help, aliases and a note if the user can't run the command.
+        It will add an author, command signature + help, aliases and a
+        note if the user can't run the command.
         """
+
         embed = Embed()
         embed.set_author(name='Command Help')
 
@@ -217,6 +231,7 @@ class CustomHelpCommand(commands.HelpCommand):
 
     async def send_command_help(self, command: commands.Command) -> None:
         """Send help for a single command."""
+
         embed = await self.command_formatting(command)
         await self.context.send(embed=embed)
 
@@ -225,10 +240,13 @@ class CustomHelpCommand(commands.HelpCommand):
         commands_: List[commands.Command], return_as_list: bool = False
     ) -> Union[List[str], str]:
         """
-        Formats the prefix, command name and signature, and short doc for an iterable of commands.
+        Formats the prefix, command name and signature, and short doc
+        for an iterable of commands.
 
-        return_as_list is helpful for passing these command details into the paginator as a list of command details.
+        return_as_list is helpful for passing these command details into
+        the paginator as a list of command details.
         """
+
         details = []
         for command in commands_:
             signature = f' {command.signature}' if command.signature else ''
@@ -242,6 +260,7 @@ class CustomHelpCommand(commands.HelpCommand):
 
     async def send_group_help(self, group: commands.Group) -> None:
         """Sends help for a group command."""
+
         subcommands = group.commands
 
         if len(subcommands) == 0:
@@ -262,6 +281,7 @@ class CustomHelpCommand(commands.HelpCommand):
 
     async def send_cog_help(self, cog: commands.Cog) -> None:
         """Send help for a cog."""
+
         # sort commands by name, and remove any the user can't run or are hidden.
         commands_ = await self.filter_commands(cog.get_commands(), sort=True)
 
@@ -278,10 +298,13 @@ class CustomHelpCommand(commands.HelpCommand):
     @staticmethod
     def _category_key(command: commands.Command) -> str:
         """
-        Returns a cog name of a given command for use as a key for `sorted` and `groupby`.
+        Returns a cog name of a given command for use as a key for
+        `sorted` and `groupby`.
 
-        A zero width space is used as a prefix for results with no cogs to force them last in ordering.
+        A zero width space is used as a prefix for results with no cogs
+        to force them last in ordering.
         """
+
         if command.cog:
             with suppress(AttributeError):
                 if command.cog.category:
@@ -294,8 +317,10 @@ class CustomHelpCommand(commands.HelpCommand):
         """
         Sends help for a bot category.
 
-        This sends a brief help for all commands in all cogs registered to the category.
+        This sends a brief help for all commands in all cogs registered
+        to the category.
         """
+
         embed = Embed()
         embed.set_author(name='Command Help')
 
@@ -324,6 +349,7 @@ class CustomHelpCommand(commands.HelpCommand):
 
     async def send_bot_help(self, mapping: dict) -> None:
         """Sends help for all bot commands and cogs."""
+
         bot = self.context.bot
 
         embed = Embed()
