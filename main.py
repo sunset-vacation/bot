@@ -13,7 +13,8 @@ from requests import get as get_url
 from simpleeval import simple_eval
 
 from config import CONFIG
-from database import add_scammer_ban, get_user, is_user_scammer
+from database import Topic, add_scammer_ban, get_user, is_user_scammer
+from utils import get_random_documents
 
 intents = discord.Intents.all()
 
@@ -210,6 +211,15 @@ async def revive(
 
     if topic:
         embed.description = topic
+    else:
+        document = get_random_documents(Topic, 1)[0]
+        embed.description = document.content
+
+        if document.thumbnail and document.thumbnail_approved:
+            embed.set_thumbnail(url=document.thumbnail)
+
+            if document.credit:
+                embed.set_footer(text=document.credit)
 
     await ctx.send(f'<@&{CONFIG.guild.roles.reviver}>', embed=embed)
 
@@ -634,6 +644,7 @@ bot.load_extension('xp')
 bot.load_extension('afk')
 bot.load_extension('developer')
 bot.load_extension('staff')
+bot.load_extension('fun')
 bot.load_extension('help')
 
 bot.run(CONFIG.bot.token)

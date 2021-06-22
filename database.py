@@ -77,3 +77,10 @@ def is_user_scammer(user_id: int) -> bool:
         return False
 
     return True
+
+
+class Topic(mongoengine.Document):
+    content = mongoengine.StringField()
+    thumbnail = mongoengine.URLField()
+    credit = mongoengine.StringField()
+    thumbnail_approved = mongoengine.BooleanField(default=False)

@@ -1,6 +1,7 @@
-from typing import Callable
+from typing import Callable, Type
 
 from discord import Guild
+from mongoengine import Document
 
 
 def format_coins(amount: int) -> str:
@@ -24,3 +25,14 @@ def optional_mention(user_id: int, guild: Guild) -> str:
         return guild.get_member(user_id).mention
     except AttributeError:
         return str(user_id)
+
+
+def get_random_oids(collection, sample_size: int = 1):
+    pipeline = [{'$project': {'_id': 1}}, {'$sample': {'size': sample_size}}]
+    return [s['_id'] for s in collection.aggregate(pipeline)]
+
+
+def get_random_documents(DocClass: Type[Document], sample_size: int = 1):
+    doc_collection = DocClass._get_collection()
+    random_oids = get_random_oids(doc_collection, sample_size)
+    return DocClass.objects(id__in=random_oids)
