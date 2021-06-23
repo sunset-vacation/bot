@@ -1,10 +1,7 @@
-from copy import copy
 from dataclasses import dataclass
-from datetime import timedelta
 from re import findall
 from time import time
 from typing import Dict, Optional
-from uuid import uuid4
 
 import discord
 from discord.ext import commands
@@ -13,8 +10,7 @@ from requests import get as get_url
 from simpleeval import simple_eval
 
 from config import CONFIG
-from database import Topic, add_scammer_ban, get_user, is_user_scammer
-from utils import get_random_documents
+from database import add_scammer_ban, get_user, is_user_scammer
 
 intents = discord.Intents.all()
 
@@ -117,57 +113,6 @@ async def on_member_join(member: discord.Member) -> None:
         )
 
 
-@bot.command()
-@commands.is_owner()
-async def blacklisted(
-    ctx: commands.Context, member: discord.Member, time: str, *, reason: str
-) -> None:
-    """Notifies a user that they've been blacklisted from giveaways"""
-
-    embed = discord.Embed(
-        title="You've been blacklisted from giveaways, lotteries, and events.",
-        description='You can appeal '
-        '[here](https://sunsetcity.bsoyka.me/appeals) or undo this early by '
-        'purchasing `Escape Jail` from the UnbelievaBoat store.',
-        color=discord.Color.red(),
-    )
-    embed.add_field(name='Time', value=time, inline=True)
-    embed.add_field(name='Reason', value=reason, inline=True)
-
-    try:
-        await member.send(embed=embed)
-    except:
-        channel = get(
-            bot.guilds[0].channels, id=CONFIG.guild.channels.blacklisted
-        )
-        await channel.send(member.mention, embed=embed)
-
-    await ctx.message.add_reaction('✅')
-
-
-@bot.command(name='gawreqs')
-@commands.is_owner()
-async def did_not_meet_reqs(
-    ctx: commands.Context, member: discord.Member
-) -> None:
-    """Notifies a user that their giveaway reaction has been removed"""
-
-    giveaway: discord.Message = ctx.message.reference.resolved
-    jump = giveaway.jump_url
-
-    await giveaway.remove_reaction('🎉', member)
-
-    embed = discord.Embed(
-        title='Your giveaway entry has been removed.',
-        description=f'You did not meet/complete the requirements for [this giveaway]({jump}).',
-        color=discord.Color.red(),
-    )
-
-    await member.send(embed=embed)
-
-    await ctx.message.delete()
-
-
 @bot.event
 async def on_member_remove(member: discord.Member) -> None:
     if member.bot:
@@ -176,54 +121,6 @@ async def on_member_remove(member: discord.Member) -> None:
     chat = get(bot.guilds[0].channels, id=CONFIG.guild.channels.chat)
 
     await chat.send(f'{member.name}#{member.discriminator} has left us.')
-
-
-@bot.command()
-@commands.has_role(CONFIG.guild.roles.moderator)
-async def modnick(ctx: commands.Context, member: discord.Member) -> None:
-    """Moderates the nickname of a member"""
-
-    await member.edit(
-        nick='Moderated name ' + str(uuid4())[:8],
-        reason=f'Moderated by {ctx.author}',
-    )
-    await ctx.message.add_reaction('✅')
-
-
-def chat_only(ctx: commands.Context) -> bool:
-    return ctx.channel.id == CONFIG.guild.channels.chat
-
-
-@bot.command()
-@commands.has_role(CONFIG.guild.roles.helper)
-@commands.cooldown(1, 3600, commands.BucketType.guild)
-@commands.check(chat_only)
-async def revive(
-    ctx: commands.Context, *, topic: Optional[str] = None
-) -> None:
-    """Pings the chat revival role
-
-    Can only be used in <#805289244049932319>.
-    """
-
-    embed = discord.Embed(title="Let's revive the chat!")
-    embed.set_author(name=ctx.author, icon_url=ctx.author.avatar_url)
-
-    if topic:
-        embed.description = topic
-    else:
-        document = get_random_documents(Topic, 1)[0]
-        embed.description = document.content
-
-        if document.thumbnail and document.thumbnail_approved:
-            embed.set_thumbnail(url=document.thumbnail)
-
-            if document.credit:
-                embed.set_footer(text=document.credit)
-
-    await ctx.send(f'<@&{CONFIG.guild.roles.reviver}>', embed=embed)
-
-    await ctx.message.delete()
 
 
 @dataclass
@@ -354,21 +251,6 @@ async def ping(ctx: commands.Context) -> None:
     )
 
     await ctx.reply(embed=embed)
-
-
-@bot.command()
-@commands.is_owner()
-async def sudo(
-    ctx: commands.Context, user: discord.Member, *, command: str
-) -> None:
-    """Processes a command as if it was sent by another user"""
-    fake_message = copy(ctx.message)
-
-    fake_message.author = user
-    fake_message.content = ctx.prefix + command
-
-    await bot.process_commands(fake_message)
-    await ctx.message.add_reaction('✅')
 
 
 @bot.command(aliases=['me'])
@@ -514,96 +396,6 @@ async def math(ctx: commands.Context, *, expression: str) -> None:
             color=discord.Color.blurple(),
         )
     )
-
-
-def giveaways_only(ctx: commands.Context) -> bool:
-    return ctx.channel.id == CONFIG.guild.channels.giveaways
-
-
-@bot.command()
-@commands.check(giveaways_only)
-async def claim(ctx: commands.Context, minutes: int) -> None:
-    """Shows a claim time limit for a giveaway
-
-    Must be used by replying to the giveaway winner message
-    """
-
-    winner_msg = ctx.message.reference.resolved
-    end_time = winner_msg.created_at + timedelta(minutes=minutes)
-
-    embed = discord.Embed(timestamp=end_time, color=discord.Color.blurple())
-    embed.set_footer(text='Must DM host (not sponsor) to claim by')
-
-    await winner_msg.reply('', embed=embed)
-    await ctx.message.delete()
-
-
-@bot.command()
-@commands.is_owner()
-async def dankdown(ctx: commands.Context) -> None:
-    """Locks down Dank Memer channels"""
-
-    channels = CONFIG.guild.dank_channels
-
-    embed = discord.Embed(
-        title='Dank Memer is down!',
-        description='''
-**You are not muted.** __All Dank Memer channels are locked until the bot comes back online.__
-
-*(Note that just because the bot is online in another server doesn't mean it's online here.)*
-''',
-        color=discord.Color.red(),
-    )
-    embed.set_thumbnail(
-        url='https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/240/'
-        'apple/271/locked_1f512.png'
-    )
-
-    for channel_id in channels:
-        channel = get(bot.guilds[0].channels, id=channel_id)
-
-        overwrites = channel.overwrites_for(ctx.guild.default_role)
-        overwrites.send_messages = False
-
-        await channel.set_permissions(
-            ctx.guild.default_role, overwrite=overwrites
-        )
-        await channel.send('', embed=embed)
-
-    await ctx.reply('Locked down Dank Memer channels.')
-
-
-@bot.command()
-@commands.is_owner()
-async def dankup(ctx: commands.Context) -> None:
-    """Unlocks Dank Memer channels"""
-
-    channels = CONFIG.guild.dank_channels
-
-    embed = discord.Embed(
-        title='Dank Memer is back!',
-        description='''
-Thank you for your patience.
-''',
-        color=discord.Color.red(),
-    )
-    embed.set_thumbnail(
-        url='https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/'
-        'thumbs/240/apple/271/unlocked_1f513.png'
-    )
-
-    for channel_id in channels:
-        channel = get(bot.guilds[0].channels, id=channel_id)
-
-        overwrites = channel.overwrites_for(ctx.guild.default_role)
-        overwrites.send_messages = None
-
-        await channel.set_permissions(
-            ctx.guild.default_role, overwrite=overwrites
-        )
-        await channel.send('', embed=embed)
-
-    await ctx.reply('Unlocked Dank Memer channels.')
 
 
 @bot.event
