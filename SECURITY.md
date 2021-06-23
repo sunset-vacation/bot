@@ -34,7 +34,7 @@ complete any necessary testing.
 We may be willing to offer digital rewards in exchange for responsible and
 private vulnerability disclosures, provided the following requirements are met:
 
-* You must not share any information regarding the vulnerability outisde of
+* You must not share any information regarding the vulnerability outside of
   private communication with [Sunset City](https://discord.gg/fFPEFYUnVp)
   admins.
 * You must disclose the vulnerability in a timely manner after discovering it.
