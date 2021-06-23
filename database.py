@@ -26,6 +26,7 @@ class User(mongoengine.Document):
     donated = mongoengine.IntField(default=0, min_value=0)
     xp = mongoengine.IntField(default=0, min_value=0)
     afk = mongoengine.EmbeddedDocumentField(Afk, default=None)
+    vouches = mongoengine.IntField(default=0, min_value=0)
 
     @property
     def level(self) -> int:

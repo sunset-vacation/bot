@@ -1,8 +1,15 @@
+from typing import Optional
+from utils import adapt_to_pronouns
+from database import get_user
 from discord import Color, Embed, Member, User
 from discord.ext import commands
+from discord.ext.commands.context import Context
 from discord.utils import get
 
 from config import CONFIG
+from inflect import engine
+
+p = engine()
 
 
 class TradingCog(commands.Cog, name='Trading'):
@@ -152,6 +159,51 @@ class TradingCog(commands.Cog, name='Trading'):
                 pass
 
         await ctx.reply(embed=Embed(title='Success!', color=Color.blurple()))
+
+    @commands.command(aliases=['+1'])
+    @commands.cooldown(1, 90, commands.BucketType.user)
+    async def vouch(self, ctx: Context, user: Member) -> None:
+        """Vouches for another user after a successful trade"""
+
+        if ctx.author == user:
+            await ctx.reply(
+                embed=Embed(
+                    title="You can't vouch for yourself", color=Color.red()
+                )
+            )
+            return
+
+        recipient = get_user(user.id)
+
+        recipient.vouches += 1
+        recipient.save()
+
+        await ctx.reply(
+            embed=Embed(
+                title=f'Vouched for {user}',
+                description=adapt_to_pronouns(
+                    user, they='They have', he='He has', she='She has'
+                )
+                + f' {recipient.vouches} {p.plural("vouch", recipient.vouches)}.',
+                color=Color.blurple(),
+            )
+        )
+
+    @commands.command(aliases=['v'])
+    async def vouches(
+        self, ctx: Context, user: Optional[Member] = None
+    ) -> None:
+        if not user:
+            user = ctx.author
+
+        document = get_user(user.id)
+
+        embed = Embed(color=Color.blurple())
+        embed.set_author(name=str(user), icon_url=user.avatar_url)
+        embed.add_field(name='Vouches', value=str(document.vouches))
+        embed.add_field(name='Server Level', value=str(document.level))
+
+        await ctx.reply(embed=embed)
 
 
 def setup(bot: commands.Bot) -> None:
