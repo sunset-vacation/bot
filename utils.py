@@ -1,6 +1,6 @@
-from typing import Callable, Type
+from typing import Callable, List, Type
 
-from discord import Guild
+from discord import Guild, Member
 from mongoengine import Document
 
 
@@ -36,3 +36,14 @@ def get_random_documents(DocClass: Type[Document], sample_size: int = 1):
     doc_collection = DocClass._get_collection()
     random_oids = get_random_oids(doc_collection, sample_size)
     return DocClass.objects(id__in=random_oids)
+
+
+def adapt_to_pronouns(member: Member, they: str, he: str, she: str):
+    role_names: List[str] = [role.name.lower() for role in member.roles]
+
+    if any('he/him' in name for name in role_names):
+        return he
+    elif any('she/her' in name for name in role_names):
+        return she
+    else:
+        return they
