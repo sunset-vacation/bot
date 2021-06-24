@@ -22,7 +22,7 @@ class XPCog(Cog, name='XP and Leveling'):
 
     @Cog.listener()
     async def on_message(self, message: Message) -> None:
-        if message.author.bot or message.guild == None:
+        if message.author.bot or message.guild is None:
             return
 
         if message.channel.id not in CONFIG.xp.channels:

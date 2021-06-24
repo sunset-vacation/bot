@@ -305,13 +305,13 @@ class CustomHelpCommand(commands.HelpCommand):
         to force them last in ordering.
         """
 
-        if command.cog:
-            with suppress(AttributeError):
-                if command.cog.category:
-                    return f'**{command.cog.category}**'
-            return f'**{command.cog_name}**'
-        else:
+        if not command.cog:
             return '**\u200bNo Category:**'
+
+        with suppress(AttributeError):
+            if command.cog.category:
+                return f'**{command.cog.category}**'
+        return f'**{command.cog_name}**'
 
     async def send_category_help(self, category: Category) -> None:
         """

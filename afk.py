@@ -115,22 +115,21 @@ class AfkCog(Cog, name='AFK'):
 
             mentioned_account = get_user(mentioned_user.id)
 
-            if mentioned_account is not None:
-                if mentioned_account.afk is not None:
-                    old_name = (
-                        mentioned_account.afk.old_nick
-                        if mentioned_account.afk.old_nick is not None
-                        else mentioned_user.name
-                    )
+            if mentioned_account is not None and mentioned_account.afk is not None:
+                old_name = (
+                    mentioned_account.afk.old_nick
+                    if mentioned_account.afk.old_nick is not None
+                    else mentioned_user.name
+                )
 
-                    embed = discord.Embed(
-                        title=f'{old_name} is currently AFK',
-                        color=discord.Color.gold(),
-                    )
-                    embed.add_field(
-                        name='Reason', value=mentioned_account.afk.reason
-                    )
-                    await message.reply(embed=embed, delete_after=8)
+                embed = discord.Embed(
+                    title=f'{old_name} is currently AFK',
+                    color=discord.Color.gold(),
+                )
+                embed.add_field(
+                    name='Reason', value=mentioned_account.afk.reason
+                )
+                await message.reply(embed=embed, delete_after=8)
 
     @Cog.listener()
     async def on_typing(

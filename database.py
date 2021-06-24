@@ -74,10 +74,7 @@ def add_scammer_ban(user_id: int, guild: Guild, proof: str) -> None:
 def is_user_scammer(user_id: int) -> bool:
     ban = ScammerBan.objects.with_id(user_id)  # pylint: disable=no-member
 
-    if ban is None:
-        return False
-
-    return True
+    return ban is not None
 
 
 class Topic(mongoengine.Document):

@@ -201,7 +201,7 @@ The total amount of XP points you'll need to reach a specific level is determine
 async def guides(ctx: commands.Context, guide: Optional[str] = None) -> None:
     """Shows a guide (or the list of guides if not specified)"""
 
-    if guide == None:
+    if guide is None:
         embed = discord.Embed(
             title='List of guide tags',
             color=discord.Color.blurple(),
@@ -289,11 +289,10 @@ async def user(
             timestamp=user.joined_at,
         )
 
-        if account is not None:
-            if account.afk is not None:
-                embed.add_field(
-                    name='AFK Reason', value=account.afk.reason, inline=False
-                )
+        if account is not None and account.afk is not None:
+            embed.add_field(
+                name='AFK Reason', value=account.afk.reason, inline=False
+            )
 
         pronoun_roles = [
             role.mention
@@ -313,11 +312,7 @@ async def user(
         if age_roles:
             embed.add_field(name='Age Range', value=age_roles[0])
 
-        if account is not None:
-            donated = '⏣ {:,}'.format(account.donated)
-        else:
-            donated = '⏣ 0'
-
+        donated = '⏣ {:,}'.format(account.donated) if account is not None else '⏣ 0'
         embed.add_field(
             name='Experience',
             value='Level {:,} ({:,} XP)'.format(account.level, account.xp),
@@ -403,7 +398,7 @@ async def on_message(message: discord.Message) -> None:
     if message.author == bot.user:
         return
 
-    if message.guild == None:
+    if message.guild is None:
         await message.channel.send(
             "**Commands are disabled in DMs.** If you're trying to contact the"
             ' mods, reach out to <@814371132059680799> instead.'
