@@ -10,13 +10,15 @@ from database import Topic
 from utils import get_random_documents
 
 
-def topic_embed(document: Topic):
+def topic_embed(document: Topic, *, check_approval: bool = True):
     embed = Embed(
         title=document.content,
         color=Color.blurple(),
     )
 
-    if document.thumbnail and document.thumbnail_approved:
+    if document.thumbnail and (
+        document.thumbnail_approved if check_approval else True
+    ):
         embed.set_thumbnail(url=document.thumbnail)
 
         if document.credit:
@@ -88,7 +90,7 @@ class FunCog(Cog, name='Fun'):
             json={'cash': 20, 'reason': 'topic photo'},
         ).json()
 
-        await ctx.reply(embed=topic_embed(document))
+        await ctx.reply(embed=topic_embed(document, check_approval=False))
 
 
 def setup(bot: Bot) -> None:
