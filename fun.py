@@ -101,6 +101,7 @@ class FunCog(Cog, name='Fun'):
 
         document.thumbnail = url
         document.credit = credit
+        document.thumbnail_approved = False
 
         document.save()
 
