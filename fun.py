@@ -1,7 +1,7 @@
 from typing import Optional
 
 from discord import Color, Embed
-from discord.ext.commands import Bot, Cog, Context, command, is_owner
+from discord.ext.commands import Bot, Cog, Context, group, is_owner
 from discord.ext.commands.core import has_role
 from requests import patch
 
@@ -33,17 +33,20 @@ class FunCog(Cog, name='Fun'):
     def __init__(self, bot: Bot):
         self.bot = bot
 
-    @command()
+    @group()
     async def topic(self, ctx: Context) -> None:
         """Displays a conversation starter"""
 
-        document = get_random_documents(Topic, 1)[0]
+        if ctx.invoked_subcommand is None:
+            document = get_random_documents(Topic, 1)[0]
 
-        await ctx.reply(embed=topic_embed(document))
+            await ctx.reply(embed=topic_embed(document))
 
-    @command(name='addtopics')
+    @topic.command(name='add')
     @is_owner()
     async def add_topics(self, ctx: Context, *, topics_str: str) -> None:
+        """Adds one or more topics to the database"""
+
         topics = topics_str.splitlines()
 
         for topic in topics:
@@ -57,7 +60,7 @@ class FunCog(Cog, name='Fun'):
             )
         )
 
-    @command(name='topicphoto')
+    @topic.command(name='photo')
     @has_role(CONFIG.xp.roles['5'])
     async def set_topic_photo(
         self,
@@ -67,6 +70,8 @@ class FunCog(Cog, name='Fun'):
         *,
         credit: Optional[str] = None,
     ):
+        """Submits a photo for a topic for approval"""
+
         # pylint: disable=no-member
 
         document = Topic.objects.with_id(topic_id)
