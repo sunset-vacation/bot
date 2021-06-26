@@ -43,6 +43,7 @@ class FunCog(Cog, name='Fun'):
             await ctx.reply(embed=topic_embed(document))
 
     @topic.command(name='add')
+    @topic.command(name='add', aliases=['a', '+'])
     @is_owner()
     async def add_topics(self, ctx: Context, *, topics_str: str) -> None:
         """Adds one or more topics to the database"""
@@ -61,6 +62,7 @@ class FunCog(Cog, name='Fun'):
         )
 
     @topic.command(name='photo')
+    @topic.command(name='photo', aliases=['p'])
     @has_role(CONFIG.xp.roles['5'])
     async def set_topic_photo(
         self,
