@@ -60,6 +60,21 @@ class FunCog(Cog, name='Fun'):
             )
         )
 
+    @topic.command(name='search', aliases=['s'])
+    @is_owner()
+    async def search_topics(self, ctx: Context, *, query: str) -> None:
+        """Searches existing topics"""
+
+        # pylint: disable=no-member
+
+        embed = Embed(
+            title=f'Search results for: {query}', color=Color.blurple()
+        )
+        for doc in Topic.objects(__raw__={'$text': {'$search': query}})[:10]:
+            embed.add_field(name=doc.content, value=f'*{doc.id}*')
+
+        await ctx.reply(embed=embed)
+
     @topic.command(name='photo', aliases=['p'])
     @has_role(CONFIG.xp.roles['5'])
     async def set_topic_photo(
