@@ -1,3 +1,4 @@
+from random import choice
 from typing import Optional
 
 from discord import Color, Embed
@@ -112,6 +113,51 @@ class FunCog(Cog, name='Fun'):
         ).json()
 
         await ctx.reply(embed=topic_embed(document, check_approval=False))
+
+    @topic.command(name='unapproved', aliases=['u', 'up'])
+    @is_owner()
+    async def unapproved_topic_photo(self, ctx: Context) -> None:
+        """Searches for a topic with an unapproved photo"""
+
+        # pylint: disable=no-member
+
+        results = Topic.objects(
+            thumbnail__exists=True, thumbnail_approved=False
+        )
+
+        if not results:
+            await ctx.reply(
+                embed=Embed(
+                    title='No more unapproved photos!', color=Color.red()
+                )
+            )
+            return
+
+        document = choice(results)
+
+        await ctx.reply(embed=topic_embed(document, check_approval=False))
+
+    @topic.command(name='approve', aliases=['app'])
+    @is_owner()
+    async def approve_topic_photo(self, ctx: Context, topic_id: str):
+        """Approves the submitted photo for a topic"""
+
+        # pylint: disable=no-member
+
+        document = Topic.objects.with_id(topic_id)
+
+        if not document.thumbnail:
+            await ctx.reply(
+                embed=Embed(
+                    title="That topic doesn't have a photo.", color=Color.red()
+                )
+            )
+            return
+
+        document.thumbnail_approved = True
+        document.save()
+
+        await ctx.reply(embed=topic_embed(document))
 
 
 def setup(bot: Bot) -> None:
