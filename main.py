@@ -245,7 +245,7 @@ async def guides(ctx: commands.Context, guide: Optional[str] = None) -> None:
 async def ping(ctx: commands.Context) -> None:
     """Shows the bot's latency"""
 
-    embed = discord.Embed(title='Pong!', color=discord.Color.blurple())
+    embed = discord.Embed(title='Pong! 🏓', color=discord.Color.blurple())
     embed.add_field(
         name='Bot Latency', value=f'{round(bot.latency * 1000, 4)} ms'
     )

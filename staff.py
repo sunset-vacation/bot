@@ -3,13 +3,14 @@ from datetime import timedelta
 from typing import Optional
 from uuid import uuid4
 
+from better_profanity import profanity
 from discord import Color, Embed, Member, Message
 from discord.ext import commands
 from discord.utils import get
 
 from config import CONFIG
 from database import Topic
-from utils import get_random_documents
+from utils import get_random_documents, send_webhook
 
 
 def chat_only(ctx: commands.Context) -> bool:
@@ -26,7 +27,9 @@ class StaffCog(commands.Cog, name='Staff Tools'):
 
     @commands.command()
     @commands.has_role(CONFIG.guild.roles.staff)
-    async def leave(self, ctx: commands.Context) -> None:
+    async def leave(
+        self, ctx: commands.Context, *, message: Optional[str] = None
+    ) -> None:
         """Toggles your leave status"""
 
         leave_role = get(ctx.guild.roles, id=CONFIG.guild.roles.staff_leave)
@@ -54,6 +57,17 @@ class StaffCog(commands.Cog, name='Staff Tools'):
                 )
             )
 
+            if message:
+                embed = Embed(
+                    description=profanity.censor(message, censor_char='•'),
+                    color=Color.blurple(),
+                )
+                embed.set_author(
+                    name=str(ctx.author), icon_url=ctx.author.avatar_url
+                )
+
+                await send_webhook(CONFIG.guild.webhooks.leave, embed=embed)
+
     @commands.command()
     @commands.is_owner()
     async def blacklisted(
@@ -74,11 +88,9 @@ class StaffCog(commands.Cog, name='Staff Tools'):
         try:
             await member.send(embed=embed)
         except:
-            channel = get(
-                self.bot.guilds[0].channels,
-                id=CONFIG.guild.channels.blacklisted,
+            await send_webhook(
+                CONFIG.guild.webhooks.blacklist, member.mention, embed=embed
             )
-            await channel.send(member.mention, embed=embed)
 
         await ctx.message.add_reaction('✅')
 

@@ -1,6 +1,7 @@
-from typing import Callable, List, Type
+from typing import Callable, List, Optional, Type
 
-from discord import Guild, Member
+from aiohttp import ClientSession
+from discord import AsyncWebhookAdapter, Guild, Member, Webhook
 from mongoengine import Document
 
 
@@ -47,3 +48,13 @@ def adapt_to_pronouns(member: Member, they: str, he: str, she: str):
         return she
     else:
         return they
+
+
+async def send_webhook(
+    webhook_url: str, content: Optional[str] = None, **send_kwargs
+):
+    async with ClientSession() as session:
+        webhook = Webhook.from_url(
+            webhook_url, adapter=AsyncWebhookAdapter(session)
+        )
+        await webhook.send(content, **send_kwargs)

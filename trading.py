@@ -1,13 +1,14 @@
 from typing import Optional
-from utils import adapt_to_pronouns
-from database import get_user
+
 from discord import Color, Embed, Member, User
 from discord.ext import commands
 from discord.ext.commands.context import Context
 from discord.utils import get
+from inflect import engine
 
 from config import CONFIG
-from inflect import engine
+from database import get_user
+from utils import adapt_to_pronouns, send_webhook
 
 p = engine()
 
@@ -79,9 +80,6 @@ class TradingCog(commands.Cog, name='Trading'):
             )
             return
 
-        channel = get(
-            self.bot.guilds[0].channels, id=CONFIG.channels.middleman
-        )
         role = get(self.bot.guilds[0].roles, id=CONFIG.guild.roles.middleman)
 
         embed = Embed(
@@ -95,7 +93,9 @@ class TradingCog(commands.Cog, name='Trading'):
             inline=False,
         )
 
-        await channel.send(role.mention, embed=embed)
+        await send_webhook(
+            CONFIG.guild.webhooks.middleman, role.mention, embed=embed
+        )
 
         await ctx.reply(
             embed=Embed(
@@ -111,7 +111,6 @@ class TradingCog(commands.Cog, name='Trading'):
         """Adds the specified users to the trading channel"""
 
         guild = self.bot.guilds[0]
-        channel = get(guild.channels, id=CONFIG.channels.middleman)
         role = get(guild.roles, id=CONFIG.guild.roles.middleman_trading)
 
         for user in users:
@@ -131,8 +130,10 @@ class TradingCog(commands.Cog, name='Trading'):
             inline=False,
         )
 
-        await channel.send(
-            ' '.join(user.mention for user in users), embed=embed
+        await send_webhook(
+            CONFIG.guild.webhooks.middleman,
+            ' '.join(user.mention for user in users),
+            embed=embed,
         )
 
     @commands.command()
