@@ -2,6 +2,7 @@
 name = "sunset-bot"
 version = "1.0.0"
 description = ""
+authors = ["Ben Soyka <hello@bsoyka.me>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
