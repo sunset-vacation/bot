@@ -10,7 +10,7 @@ from discord.utils import get
 
 from config import CONFIG
 from database import Topic
-from utils import get_random_documents, send_webhook
+from utils import confirm_buttons, get_random_documents, send_webhook
 
 
 def chat_only(ctx: commands.Context) -> bool:
@@ -35,38 +35,55 @@ class StaffCog(commands.Cog, name='Staff Tools'):
         leave_role = get(ctx.guild.roles, id=CONFIG.guild.roles.staff_leave)
 
         if leave_role in ctx.author.roles:
-            await ctx.author.remove_roles(
-                leave_role, reason='Self-toggled staff leave role'
+            msg, on_click = await confirm_buttons(
+                ctx, "Are you sure you'd like to turn off your leave status?"
             )
 
-            await ctx.reply(
-                embed=Embed(
-                    title='Turned staff leave off',
-                    color=Color.green(),
+            @on_click.matching_id('yes_button')
+            async def on_yes_button(inter):
+                await ctx.author.remove_roles(
+                    leave_role, reason='Self-toggled staff leave role'
                 )
-            )
+
+                await msg.edit(
+                    components=[],
+                    embed=Embed(
+                        title='Turned staff leave off',
+                        color=Color.green(),
+                    ),
+                )
+
         else:
-            await ctx.author.add_roles(
-                leave_role, reason='Self-toggled staff leave role'
+            msg, on_click = await confirm_buttons(
+                ctx, "Are you sure you'd like to turn on your leave status?"
             )
 
-            await ctx.reply(
-                embed=Embed(
-                    title='Turned staff leave on',
-                    color=Color.green(),
-                )
-            )
-
-            if message:
-                embed = Embed(
-                    description=profanity.censor(message, censor_char='•'),
-                    color=Color.blurple(),
-                )
-                embed.set_author(
-                    name=str(ctx.author), icon_url=ctx.author.avatar_url
+            @on_click.matching_id('yes_button')
+            async def on_yes_button(inter):
+                await ctx.author.add_roles(
+                    leave_role, reason='Self-toggled staff leave role'
                 )
 
-                await send_webhook(CONFIG.guild.webhooks.leave, embed=embed)
+                await msg.edit(
+                    components=[],
+                    embed=Embed(
+                        title='Turned staff leave on',
+                        color=Color.green(),
+                    ),
+                )
+
+                if message:
+                    embed = Embed(
+                        description=profanity.censor(message, censor_char='•'),
+                        color=Color.blurple(),
+                    )
+                    embed.set_author(
+                        name=str(ctx.author), icon_url=ctx.author.avatar_url
+                    )
+
+                    await send_webhook(
+                        CONFIG.guild.webhooks.leave, embed=embed
+                    )
 
     @commands.command()
     @commands.is_owner()

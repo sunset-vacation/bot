@@ -6,6 +6,7 @@ from typing import Dict, Optional
 import discord
 from discord.ext import commands
 from discord.utils import escape_markdown, get
+from dislash import SlashClient
 from requests import get as get_url
 from simpleeval import simple_eval
 
@@ -18,6 +19,8 @@ bot = commands.Bot(
     command_prefix=CONFIG.bot.prefix, case_insensitive=True, intents=intents
 )
 bot.remove_command('help')
+
+slash = SlashClient(bot)
 
 
 @bot.event

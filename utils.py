@@ -1,7 +1,9 @@
 from typing import Callable, List, Optional, Type
 
 from aiohttp import ClientSession
-from discord import AsyncWebhookAdapter, Guild, Member, Webhook
+from discord import AsyncWebhookAdapter, Color, Embed, Guild, Member, Webhook
+from discord.ext.commands import Context
+from dislash import ActionRow, Button, ButtonStyle
 from mongoengine import Document
 
 
@@ -58,3 +60,55 @@ async def send_webhook(
             webhook_url, adapter=AsyncWebhookAdapter(session)
         )
         await webhook.send(content, **send_kwargs)
+
+
+async def confirm_buttons(ctx: Context, prompt: str):
+    row_of_buttons = ActionRow(
+        Button(
+            style=ButtonStyle.green,
+            label='Confirm',
+            custom_id='yes_button',
+        ),
+        Button(
+            style=ButtonStyle.red,
+            label='Cancel',
+            custom_id='no_button',
+        ),
+    )
+    msg = await ctx.send(
+        components=[row_of_buttons],
+        embed=Embed(
+            title=prompt,
+            color=Color.blurple(),
+        ),
+    )
+
+    on_click = msg.create_click_listener(timeout=180)
+
+    @on_click.not_from_user(
+        ctx.author, cancel_others=True, reset_timeout=False
+    )
+    async def on_wrong_user(inter):
+        await inter.reply(
+            embed=Embed(title="You're not the author", color=Color.red()),
+            ephemeral=True,
+        )
+
+    @on_click.matching_id('no_button')
+    async def on_no_button(inter):
+        await msg.edit(
+            components=[],
+            embed=Embed(title='Operation cancelled', color=Color.red()),
+        )
+
+    @on_click.timeout
+    async def on_timeout():
+        await msg.edit(
+            components=[],
+            embed=Embed(
+                title='Operation timed out',
+                color=Color.red(),
+            ),
+        )
+
+    return msg, on_click
