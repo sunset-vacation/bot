@@ -2,12 +2,12 @@
 name = "sunset-bot"
 version = "1.0.0"
 description = ""
-authors = ["Ben Soyka <hello@bsoyka.me>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.9"
 "discord.py" = "^1.7.3"
+"dislash.py" = "^1.3.2"
 better-profanity = "^0.7.0"
 dnspython = "^2.1.0"
 dynamic-yaml = "^1.2.3"
