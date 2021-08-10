@@ -41,12 +41,6 @@ class User(mongoengine.Document):
         return result
 
 
-class ScammerBan(mongoengine.Document):
-    user_id = mongoengine.IntField(primary_key=True)
-    proof = mongoengine.StringField()
-    when = mongoengine.DateTimeField(default=datetime.now)
-
-
 def get_user(user_id: int) -> User:
     account = User.objects.with_id(user_id)   # pylint: disable=no-member
 
@@ -56,29 +50,8 @@ def get_user(user_id: int) -> User:
     return User(user_id=user_id).save()
 
 
-async def ban_scammer(guild: Guild, member: Member) -> None:
-    await guild.ban(member, reason='Known scammer', delete_message_days=2)
-
-
-def add_scammer_ban(user_id: int, guild: Guild, proof: str) -> None:
-    ban = ScammerBan.objects.with_id(user_id)  # pylint: disable=no-member
-    member = guild.get_member(user_id)
-
-    if member is not None:
-        get_event_loop().run_until_complete(ban_scammer(guild, member))
-
-    if ban is None:
-        ScammerBan(user_id=user_id, proof=proof).save()
-
-
-def is_user_scammer(user_id: int) -> bool:
-    ban = ScammerBan.objects.with_id(user_id)  # pylint: disable=no-member
-
-    return ban is not None
-
-
 class Topic(mongoengine.Document):
     content = mongoengine.StringField()
     thumbnail = mongoengine.URLField()
     credit = mongoengine.StringField()
-    thumbnail_approved = mongoengine.BooleanField(default=False)
+    thumbnail_approved = mongoengine.BooleanField()

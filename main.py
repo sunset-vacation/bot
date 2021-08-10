@@ -11,7 +11,7 @@ from requests import get as get_url
 from simpleeval import simple_eval
 
 from config import CONFIG
-from database import add_scammer_ban, get_user, is_user_scammer
+from database import get_user
 
 intents = discord.Intents.all()
 
@@ -40,27 +40,6 @@ async def on_member_join(member: discord.Member) -> None:
         return
 
     chat = get(bot.guilds[0].channels, id=CONFIG.guild.channels.chat)
-
-    if is_user_scammer(member.id):
-        try:
-            await member.send(
-                'Our records show that you have previously scammed another '
-                'Dank Memer user. Because of this, you are not currently '
-                'allowed entry into our server. If this is incorrect, you may '
-                'appeal your punishment at '
-                'https://sunsetcity.bsoyka.me/appeals.'
-            )
-        except:
-            pass
-
-        await chat.send(
-            f"{member} tried to join us but doesn't belong here since we don't"
-            ' like scammers.'
-        )
-
-        await member.ban(reason='Known scammer', delete_message_days=2)
-
-        return
 
     embed = discord.Embed(
         title='Welcome to Sunset City!',
@@ -315,7 +294,9 @@ async def user(
         if age_roles:
             embed.add_field(name='Age Range', value=age_roles[0])
 
-        donated = '⏣ {:,}'.format(account.donated) if account is not None else '⏣ 0'
+        donated = (
+            '⏣ {:,}'.format(account.donated) if account is not None else '⏣ 0'
+        )
         embed.add_field(
             name='Experience',
             value='Level {:,} ({:,} XP)'.format(account.level, account.xp),
@@ -408,12 +389,6 @@ async def on_message(message: discord.Message) -> None:
         )
         return
 
-    if message.channel.id == CONFIG.guild.channels.scammer_banner:
-        for user_id in findall(r'(\d{10,})', message.content):
-            add_scammer_ban(int(user_id), message.guild, message.jump_url)
-            await message.add_reaction('✅')
-            return
-
     if message.channel.id == CONFIG.guild.channels.outside_heists:
         await message.channel.send(
             embed=discord.Embed(
@@ -427,8 +402,6 @@ async def on_message(message: discord.Message) -> None:
     await bot.process_commands(message)
 
 
-bot.load_extension('bank')
-bot.load_extension('trading')
 bot.load_extension('handling')
 bot.load_extension('xp')
 bot.load_extension('afk')

@@ -8,7 +8,7 @@ from requests import patch
 
 from config import CONFIG
 from database import Topic
-from utils import get_random_documents
+from utils import confirm_buttons, get_random_documents
 
 
 def topic_embed(document: Topic, *, check_approval: bool = True):
@@ -137,27 +137,16 @@ class FunCog(Cog, name='Fun'):
 
         await ctx.reply(embed=topic_embed(document, check_approval=False))
 
-    @topic.command(name='approve', aliases=['app'])
-    @is_owner()
-    async def approve_topic_photo(self, ctx: Context, topic_id: str):
-        """Approves the submitted photo for a topic"""
+        msg, on_click = await confirm_buttons(
+            ctx, "Would you like to approve this photo?"
+        )
 
-        # pylint: disable=no-member
+        @on_click.matching_id('yes_button')
+        async def on_yes_button(inter):
+            document.thumbnail_approved = True
+            document.save()
 
-        document = Topic.objects.with_id(topic_id)
-
-        if not document.thumbnail:
-            await ctx.reply(
-                embed=Embed(
-                    title="That topic doesn't have a photo.", color=Color.red()
-                )
-            )
-            return
-
-        document.thumbnail_approved = True
-        document.save()
-
-        await ctx.reply(embed=topic_embed(document))
+            await msg.edit(embed=Embed(title="Photo approved", color=Color.green()), components=[])
 
 
 def setup(bot: Bot) -> None:

@@ -115,7 +115,10 @@ class AfkCog(Cog, name='AFK'):
 
             mentioned_account = get_user(mentioned_user.id)
 
-            if mentioned_account is not None and mentioned_account.afk is not None:
+            if (
+                mentioned_account is not None
+                and mentioned_account.afk is not None
+            ):
                 old_name = (
                     mentioned_account.afk.old_nick
                     if mentioned_account.afk.old_nick is not None
