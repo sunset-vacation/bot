@@ -1,7 +1,7 @@
 # Sunset Bot
 
 **Sunset Bot** is a custom [discord.py][discord.py] bot for the
-[Sunset City][invite] Discord server.
+[Sunset Vacation][invite] Discord server.
 
 This repository is mainly open-sourced for transparency reasons. There
 are no contributing guidelines at the moment, but you are welcome to
