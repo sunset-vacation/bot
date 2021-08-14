@@ -138,7 +138,7 @@ class FunCog(Cog, name='Fun'):
         await ctx.reply(embed=topic_embed(document, check_approval=False))
 
         msg, on_click = await confirm_buttons(
-            ctx, "Would you like to approve this photo?"
+            ctx, 'Would you like to approve this photo?'
         )
 
         @on_click.matching_id('yes_button')
@@ -146,7 +146,10 @@ class FunCog(Cog, name='Fun'):
             document.thumbnail_approved = True
             document.save()
 
-            await msg.edit(embed=Embed(title="Photo approved", color=Color.green()), components=[])
+            await msg.edit(
+                embed=Embed(title='Photo approved', color=Color.green()),
+                components=[],
+            )
 
 
 def setup(bot: Bot) -> None:

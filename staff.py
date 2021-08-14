@@ -7,9 +7,12 @@ from better_profanity import profanity
 from discord import Color, Embed, Member, Message
 from discord.ext import commands
 from discord.utils import get
+from dislash import Button, ButtonStyle, SelectMenu, SelectOption
+from tweepy import API as TwitterAPI
+from tweepy import OAuthHandler as TwitterOAuthHandler
 
 from config import CONFIG
-from database import Topic
+from database import Topic, User
 from utils import confirm_buttons, get_random_documents, send_webhook
 
 
@@ -19,6 +22,16 @@ def chat_only(ctx: commands.Context) -> bool:
 
 def giveaways_only(ctx: commands.Context) -> bool:
     return ctx.channel.id == CONFIG.guild.channels.giveaways
+
+
+twitter_auth = TwitterOAuthHandler(
+    CONFIG.twitter.api_key, CONFIG.twitter.api_secret_key
+)
+twitter_auth.set_access_token(
+    CONFIG.twitter.access_token, CONFIG.twitter.access_token_secret
+)
+
+twitter_api = TwitterAPI(twitter_auth)
 
 
 class StaffCog(commands.Cog, name='Staff Tools'):
@@ -85,6 +98,73 @@ class StaffCog(commands.Cog, name='Staff Tools'):
                         CONFIG.guild.webhooks.leave, embed=embed
                     )
 
+    @commands.command(name='genselfroles')
+    @commands.is_owner()
+    async def generate_self_roles(self, ctx):
+        await ctx.send(
+            embed=Embed(
+                title='Select a category to view available roles',
+                color=Color.blurple(),
+            ),
+            components=[
+                SelectMenu(
+                    custom_id='selfroles',
+                    placeholder='Click me to select a category',
+                    options=[
+                        SelectOption(
+                            'Ping roles',
+                            'pings',
+                            "Stay up-to-date with what's going on in our server",
+                        ),
+                        SelectOption(
+                            'Color roles',
+                            'colors',
+                            'Change the color of your name',
+                        ),
+                        SelectOption(
+                            'Age roles', 'ages', 'Tell others how old you are'
+                        ),
+                        SelectOption(
+                            'Megaphone roles',
+                            'megaphones',
+                            'Get access to our fun megaphone channels',
+                        ),
+                        SelectOption(
+                            'Pronoun roles',
+                            'pronouns',
+                            'Tell others how to refer to you',
+                        ),
+                        SelectOption(
+                            'Continent roles',
+                            'continents',
+                            'Tell others where you live',
+                        ),
+                    ],
+                )
+            ],
+        )
+
+    def is_user_in_guild(self, user_id: int) -> bool:
+        guild = self.bot.guilds[0]
+        return guild.get_member(user_id) is not None
+
+    @commands.command(name='cleandb')
+    @commands.is_owner()
+    async def clean_database(self, ctx):
+        removed = 0
+
+        for document in User.objects:
+            if not self.is_user_in_guild(document.id):
+                document.delete()
+                removed += 1
+
+        await ctx.reply(
+            embed=Embed(
+                title=f'Removed {removed} users from the database',
+                color=Color.blurple(),
+            )
+        )
+
     @commands.command()
     @commands.is_owner()
     async def blacklisted(
@@ -95,7 +175,7 @@ class StaffCog(commands.Cog, name='Staff Tools'):
         embed = Embed(
             title="You've been blacklisted from giveaways, lotteries, and events.",
             description='You can appeal '
-            '[here](https://sunsetcity.bsoyka.me/appeals) or undo this early by '
+            '[here](https://sunset.bsoyka.me/appeals) or undo this early by '
             'purchasing `Escape Jail` from the UnbelievaBoat store.',
             color=Color.red(),
         )
@@ -171,7 +251,17 @@ class StaffCog(commands.Cog, name='Staff Tools'):
                 if document.credit:
                     embed.set_footer(text=document.credit)
 
-        await ctx.send(f'<@&{CONFIG.guild.roles.reviver}>', embed=embed)
+        await ctx.send(
+            f'<@&{CONFIG.guild.roles.reviver}>',
+            embed=embed,
+            components=[
+                Button(
+                    style=ButtonStyle.link,
+                    label='Share us on Twitter',
+                    url='https://twitter.com/intent/tweet?text=I%27m%20a%20member%20of%20%40SunsetVacation_%2C%20a%20%23DiscordServer%20dedicated%20to%20fostering%20%23FriendshipsThatLast%21%0A%0ACome%20join%20us%21&url=https%3A%2F%2Fdiscord.gg%2FfFPEFYUnVp&via=SunsetVacation_&related=discord',
+                )
+            ],
+        )
 
         await ctx.message.delete()
 
@@ -209,67 +299,31 @@ class StaffCog(commands.Cog, name='Staff Tools'):
 
     @commands.command()
     @commands.is_owner()
-    async def dankdown(self, ctx: commands.Context) -> None:
-        """Locks down Dank Memer channels"""
+    async def tweet(self, ctx: commands.Context, *, message: str) -> None:
+        """Tweets a message"""
 
-        channels = CONFIG.guild.dank_channels
+        length = len(message)
 
-        embed = Embed(
-            title='Dank Memer is down!',
-            description='''
-**You are not muted.** __All Dank Memer channels are locked until the bot comes back online.__
-
-*(Note that just because the bot is online in another server doesn't mean it's online here.)*
-''',
-            color=Color.red(),
-        )
-        embed.set_thumbnail(
-            url='https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/240/'
-            'apple/271/locked_1f512.png'
-        )
-
-        for channel_id in channels:
-            channel = get(self.bot.guilds[0].channels, id=channel_id)
-
-            overwrites = channel.overwrites_for(ctx.guild.default_role)
-            overwrites.send_messages = False
-
-            await channel.set_permissions(
-                ctx.guild.default_role, overwrite=overwrites
+        if length > 280:
+            await ctx.reply(
+                embed=Embed(
+                    title='Message too long',
+                    description=f'{length}/280 characters',
+                    color=Color.red(),
+                )
             )
-            await channel.send('', embed=embed)
+            return
 
-        await ctx.reply('Locked down Dank Memer channels.')
-
-    @commands.command()
-    @commands.is_owner()
-    async def dankup(self, ctx: commands.Context) -> None:
-        """Unlocks Dank Memer channels"""
-
-        channels = CONFIG.guild.dank_channels
-
-        embed = Embed(
-            title='Dank Memer is back!',
-            description='Thank you for your patience.',
-            color=Color.red(),
-        )
-        embed.set_thumbnail(
-            url='https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/'
-            'thumbs/240/apple/271/unlocked_1f513.png'
+        _, on_click = await confirm_buttons(
+            ctx, "Are you sure you'd like to send this Tweet?"
         )
 
-        for channel_id in channels:
-            channel = get(self.bot.guilds[0].channels, id=channel_id)
-
-            overwrites = channel.overwrites_for(ctx.guild.default_role)
-            overwrites.send_messages = None
-
-            await channel.set_permissions(
-                ctx.guild.default_role, overwrite=overwrites
+        @on_click.matching_id('yes_button')
+        async def on_yes_button(inter):
+            status = twitter_api.update_status(message)
+            await ctx.reply(
+                f'https://twitter.com/{status.user.screen_name}/status/{status.id_str}'
             )
-            await channel.send('', embed=embed)
-
-        await ctx.reply('Unlocked Dank Memer channels.')
 
 
 def setup(bot: commands.Bot) -> None:

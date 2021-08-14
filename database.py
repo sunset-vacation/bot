@@ -19,14 +19,15 @@ class Afk(mongoengine.EmbeddedDocument):
     reason = mongoengine.StringField()
     old_nick = mongoengine.StringField()
 
+    meta = {'strict': False}
+
 
 class User(mongoengine.Document):
     user_id = mongoengine.IntField(primary_key=True)
-    balance = mongoengine.IntField(default=0, min_value=0)
-    donated = mongoengine.IntField(default=0, min_value=0)
     xp = mongoengine.IntField(default=0, min_value=0)
     afk = mongoengine.EmbeddedDocumentField(Afk, default=None)
-    vouches = mongoengine.IntField(default=0, min_value=0)
+
+    meta = {'strict': False}
 
     @property
     def level(self) -> int:
@@ -55,3 +56,5 @@ class Topic(mongoengine.Document):
     thumbnail = mongoengine.URLField()
     credit = mongoengine.StringField()
     thumbnail_approved = mongoengine.BooleanField()
+
+    meta = {'strict': False}

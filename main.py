@@ -1,12 +1,17 @@
 from dataclasses import dataclass
-from re import findall
 from time import time
 from typing import Dict, Optional
 
 import discord
 from discord.ext import commands
 from discord.utils import escape_markdown, get
-from dislash import SlashClient
+from dislash import (
+    Button,
+    ButtonStyle,
+    MessageInteraction,
+    SlashClient,
+    auto_rows,
+)
 from requests import get as get_url
 from simpleeval import simple_eval
 
@@ -18,7 +23,7 @@ intents = discord.Intents.all()
 bot = commands.Bot(
     command_prefix=CONFIG.bot.prefix, case_insensitive=True, intents=intents
 )
-bot.remove_command('help')
+# bot.remove_command('help')
 
 slash = SlashClient(bot)
 
@@ -27,7 +32,7 @@ slash = SlashClient(bot)
 async def on_ready() -> None:
     await bot.change_presence(
         activity=discord.Activity(
-            type=discord.ActivityType.watching, name='!help in Sunset City'
+            type=discord.ActivityType.watching, name='!help in Sunset Vacation'
         )
     )
     bot.last_welcome = 0
@@ -57,7 +62,7 @@ async def on_member_join(member: discord.Member) -> None:
     )
     embed.add_field(
         name='Information center:',
-        value='**[Click here](https://sunsetcity.bsoyka.me)** to access our '
+        value='**[Click here](https://sunset.bsoyka.me)** to access our '
         'server rules and more.',
         inline=True,
     )
@@ -76,7 +81,7 @@ async def on_member_join(member: discord.Member) -> None:
         title='Sunset City Punishment Appeals',
         description='If you ever need to appeal a strike, mute, ban, or '
         'giveaway blacklist, click the link above. Welcome to the server!',
-        url='https://sunsetcity.bsoyka.me/appeals',
+        url='https://sunset.bsoyka.me/appeals',
         color=discord.Color.from_rgb(158, 0, 89),
     )
     embed.set_thumbnail(url=str(bot.guilds[0].icon_url))
@@ -103,6 +108,112 @@ async def on_member_remove(member: discord.Member) -> None:
     chat = get(bot.guilds[0].channels, id=CONFIG.guild.channels.chat)
 
     await chat.send(f'{member.name}#{member.discriminator} has left us.')
+
+
+def user_has_role(member: discord.Member, role_id: int) -> bool:
+    return any(r.id == role_id for r in member.roles)
+
+
+@bot.event
+async def on_dropdown(inter: MessageInteraction):
+    if inter.component.custom_id != 'selfroles':
+        return
+
+    if inter.select_menu.selected_options[0].value == 'colors' and all(
+        not user_has_role(inter.author, r)
+        for r in [
+            CONFIG.guild.roles.staff,
+            CONFIG.guild.roles.vip,
+            816915687133151254,
+        ]
+    ):
+        await inter.reply(
+            "You don't have permission to access those roles.", ephemeral=True
+        )
+        return
+
+    roles = {
+        'pings': [
+            ('Announements', 805309692720054313),
+            ('Giveaways', 805309733808111626),
+            ('Events', 808618482592645160),
+            ('Heists', 844020589060423680),
+            ('Outside heists', 844009948828663841),
+            ('Suggestions', 806217674739810315),
+            ('New members', 806661390512947201),
+            ('Chat revival', 822189272298815509),
+            ('Disboard bumps', 815398025430171679),
+        ],
+        'colors': [
+            ('Bronze', 816911841468481567),
+            ('Lemon', 816911905851572246),
+            ('Emerald', 816911951657041920),
+            ('Sky', 816912055675125760),
+            ('Indigo', 816912112206872576),
+            ('Grape', 816912161485488129),
+        ],
+        'ages': [
+            ('13-17', 831420695018733598),
+            ('18-24', 831420733006544906),
+            ('25+', 831420769024213023),
+        ],
+        'megaphones': [
+            ('Questions', 835011913430597642),
+            ('Facts', 835011978304946207),
+            ('Photos', 835012036642865153),
+        ],
+        'pronouns': [
+            ('He/him', 854076070127337472),
+            ('She/her', 854076069350342667),
+            ('They/them', 854076068952801320),
+            ('Ask me', 854076068406362172),
+            ('Any pronouns', 854076067392389141),
+        ],
+        'continents': [
+            ('North America', 855185170705416203),
+            ('South America', 855185263428370451),
+            ('Africa', 855185368306155593),
+            ('Asia', 855185423873081385),
+            ('Antarctica', 855185477925208074),
+            ('Europe', 855185537853292554),
+            ('Australia', 855185621295169547),
+        ],
+    }[inter.select_menu.selected_options[0].value]
+
+    buttons = [
+        Button(
+            style=ButtonStyle.green
+            if user_has_role(inter.author, role_id)
+            else ButtonStyle.red,
+            label=name,
+            custom_id=str(role_id),
+        )
+        for name, role_id in roles
+    ]
+
+    msg = await inter.reply(
+        'Click the buttons below to toggle your roles:',
+        ephemeral=True,
+        components=auto_rows(*buttons),
+    )
+
+    on_click = msg.create_click_listener(timeout=60)
+
+    @on_click.no_checks()
+    async def on_button(inter: MessageInteraction):
+        role_id = int(inter.component.custom_id)
+        role = get(inter.guild.roles, id=role_id)
+
+        if user_has_role(inter.author, role_id):
+            await inter.author.remove_roles(role, reason='Self role')
+            await inter.reply(
+                f'Removed the {role.mention} role', ephemeral=True
+            )
+        else:
+            await inter.author.add_roles(role, reason='Self role')
+            await inter.reply(
+                f'Gave you the {role.mention} role', ephemeral=True
+            )
 
 
 @dataclass
@@ -294,15 +405,10 @@ async def user(
         if age_roles:
             embed.add_field(name='Age Range', value=age_roles[0])
 
-        donated = (
-            '⏣ {:,}'.format(account.donated) if account is not None else '⏣ 0'
-        )
         embed.add_field(
             name='Experience',
             value='Level {:,} ({:,} XP)'.format(account.level, account.xp),
         )
-
-        embed.add_field(name='DMC Donated', value=donated)
 
         unb = get_url(
             f'https://unbelievaboat.com/api/v1/guilds/{CONFIG.guild.id}/users/{user.id}',
@@ -320,7 +426,6 @@ async def user(
             CONFIG.guild.notification_roles.partnerships: 'Partnerships',
             CONFIG.guild.notification_roles.giveaways: 'Giveaways',
             CONFIG.guild.notification_roles.events: 'Events',
-            CONFIG.guild.notification_roles.lotteries: 'Lotteries',
             CONFIG.guild.notification_roles.heists: 'Heists',
             CONFIG.guild.notification_roles.outside_heists: 'Outside heists',
             CONFIG.guild.notification_roles.suggestions: 'Suggestions',
@@ -334,7 +439,6 @@ async def user(
             for role in user.roles[1:][::-1]
             if role.id
             not in {
-                *CONFIG.guild.donation_roles.values(),
                 *CONFIG.xp.roles.values(),
                 CONFIG.guild.roles.member,
                 *CONFIG.guild.pronoun_roles,
@@ -342,7 +446,9 @@ async def user(
                 *notif_roles.keys(),
             }
         )
-        embed.add_field(name='Other Roles', value=roles, inline=False)
+
+        if roles:
+            embed.add_field(name='Other Roles', value=roles, inline=False)
 
         subscribed_to = [
             notif_roles[role.id]
@@ -408,6 +514,6 @@ bot.load_extension('afk')
 bot.load_extension('developer')
 bot.load_extension('staff')
 bot.load_extension('fun')
-bot.load_extension('help')
+# bot.load_extension('help')
 
 bot.run(CONFIG.bot.token)

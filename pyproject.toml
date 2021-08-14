@@ -18,6 +18,7 @@ inflect = "^5.3.0"
 mongoengine = "^0.23.1"
 requests = "^2.25.1"
 simpleeval = "^0.9.10"
+tweepy = "^3.10.0"
 
 [tool.poetry.dev-dependencies]
 blue = "^0.6.0"
