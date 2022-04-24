@@ -3,6 +3,6 @@ dynamic-yaml==1.2.3
 expiringdict==1.2.1
 fuzzywuzzy==0.18.0
 inflect==5.3.0
-mongoengine==0.23.1
+mongoengine==0.24.1
 requests==2.26.0
 simpleeval==0.9.10
