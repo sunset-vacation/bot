@@ -1,6 +1,6 @@
 discord.py==1.7.3
 dynamic-yaml==1.2.3
-expiringdict==1.2.1
+expiringdict==1.2.2
 fuzzywuzzy==0.18.0
 inflect==5.3.0
 mongoengine==0.23.1
